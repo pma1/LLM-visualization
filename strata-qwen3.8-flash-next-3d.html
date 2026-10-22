@@ -1,0 +1,1900 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strata × Qwen3.8-Flash-Next (UD-Q4_K_XL) — 3D explorer</title>
+<style>
+:root{--bg:#070b12;--ink:#eaf1fb;--dim:#8fa1b8;--line:#22304a;--teal:#14b8a6;--violet:#8b5cf6;--amber:#f59e0b;--pink:#ec4899;--blue:#3b82f6;--green:#22c55e;--orange:#f97316;--red:#ef4444;--gold:#eab308;--panel:#0b141fd9;--glow:#7dd3fc}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font:13px/1.5 "Segoe UI",system-ui,sans-serif;user-select:none}
+#bg{position:fixed;inset:-15%;z-index:0;pointer-events:none;background:
+  radial-gradient(760px 620px at 18% 16%,#0e4b6b55,transparent 62%),
+  radial-gradient(900px 700px at 82% 8%,#4c1d9555,transparent 62%),
+  radial-gradient(1000px 800px at 50% 112%,#0b4f4455,transparent 62%);
+  filter:blur(28px);animation:aurora 26s ease-in-out infinite alternate}
+@keyframes aurora{0%{transform:translate3d(-2%,-1%,0) scale(1)}50%{transform:translate3d(2%,2%,0) scale(1.06)}100%{transform:translate3d(-1%,1%,0) scale(1.02)}}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55;background-image:
+  radial-gradient(#ffffff2e 1px,transparent 1.4px),radial-gradient(#9fe8ff1f 1px,transparent 1.4px);
+  background-size:170px 170px,260px 260px;background-position:0 0,84px 132px;animation:drift 90s linear infinite}
+@keyframes drift{to{background-position:170px 340px,344px 392px}}
+#vig{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(1200px 900px at 50% 45%,transparent 55%,#03060cbb 100%)}
+header{position:fixed;top:0;left:0;right:0;z-index:30;padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:linear-gradient(#05080ef2,#05080e00)}
+header h1{font-size:15px;font-weight:700;letter-spacing:.2px;background:linear-gradient(90deg,#eaf1fb,#9fe8ff 60%,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
+header h1 span{color:var(--teal);-webkit-text-fill-color:var(--teal)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:10.5px;color:var(--dim);border:1px solid #ffffff1a;border-radius:99px;padding:2px 9px;background:linear-gradient(#ffffff10,#ffffff05);white-space:nowrap;box-shadow:inset 0 1px 0 #ffffff14;backdrop-filter:blur(6px)}
+.chip b{color:var(--ink);font-weight:600}
+.tabs{margin-left:auto;display:flex;gap:6px}
+.tab{font:inherit;font-size:12px;color:var(--dim);background:#0e1a28a6;border:1px solid #ffffff1a;border-radius:9px;padding:5px 14px;cursor:pointer;transition:.18s;backdrop-filter:blur(8px)}
+.tab:hover{color:#fff;border-color:#3f6098;box-shadow:0 0 16px #3b82f63d}
+.tab.on{color:#04121a;background:linear-gradient(180deg,#8ff0e2,#2dd4bf);border-color:#5eead4;font-weight:700;box-shadow:0 0 20px #14b8a655,inset 0 1px 0 #ffffffaa}
+#scene{position:fixed;inset:0;z-index:2;perspective:1700px;perspective-origin:50% 44%;cursor:grab;touch-action:none}
+#scene.drag{cursor:grabbing}
+#floor{position:absolute;left:50%;top:50%;width:3200px;height:3200px;margin:-1600px 0 0 -1600px;pointer-events:none;transform-style:preserve-3d;opacity:.5;
+  background:repeating-linear-gradient(0deg,#3b82f61f 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,#3b82f61f 0 1px,transparent 1px 96px);
+  -webkit-mask-image:radial-gradient(circle at 50% 50%,#000 0%,#0000 62%);mask-image:radial-gradient(circle at 50% 50%,#000 0%,#0000 62%)}
+#world{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
+#world.anim{transition:transform .8s cubic-bezier(.2,.75,.2,1)}
+.blk{position:absolute;left:0;top:0;transform-style:preserve-3d;cursor:pointer}
+.inner{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d}
+.face{animation:faceIn .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes faceIn{from{opacity:0}to{opacity:1}}
+.face{position:absolute;left:50%;top:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:1px solid #ffffff26;overflow:hidden;padding:2px 6px;
+  box-shadow:inset 0 1px 0 #ffffff2e,inset 0 -14px 22px #00000022;transition:filter .18s,border-color .18s}
+.blk:hover .face{filter:brightness(1.4) saturate(1.1);border-color:#ffffff88}
+.halo{position:absolute;left:50%;top:50%;pointer-events:none;opacity:.5;filter:blur(7px);transition:opacity .2s}
+.blk:hover .halo{opacity:.9}
+.blk.flow .halo{animation:haloPulse 1.7s ease-in-out infinite}
+@keyframes haloPulse{0%,100%{opacity:.45}50%{opacity:.95}}
+.blk.hdr .face::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 32%,#ffffff1f 50%,transparent 68%);background-size:240% 100%;animation:shimmer 6s linear infinite;pointer-events:none}
+@keyframes shimmer{from{background-position:140% 0}to{background-position:-40% 0}}
+.blk.sel .face{filter:brightness(1.55);border-color:#fff}
+.blk.flow .face{filter:brightness(1.5) saturate(1.2);border-color:#fff;animation:facePulse 1.7s ease-in-out infinite}
+@keyframes facePulse{0%,100%{filter:brightness(1.4) saturate(1.15)}50%{filter:brightness(1.8) saturate(1.3)}}
+.fl{font-size:10.5px;font-weight:700;white-space:nowrap;text-shadow:0 1px 3px #000c}
+.fs{font-size:9.5px;color:#ffffffb8;white-space:nowrap;text-shadow:0 1px 3px #000c}
+.kbd{position:absolute;top:2px;left:3px;font-size:8.5px;font-weight:800;line-height:11px;color:#07121c;background:#ffffffee;border-radius:4px;padding:0 3px;pointer-events:none;box-shadow:0 0 10px #ffffff66}
+.ochip{position:absolute;left:0;top:0;transform-style:preserve-3d;font-size:9px;font-weight:800;letter-spacing:.6px;color:#fbcfe8;background:#1b0f1a;border:1px solid #f472b6aa;border-radius:99px;padding:1px 6px;margin:-9px 0 0 -14px;box-shadow:0 0 14px #f472b655;pointer-events:none}
+.conn{position:absolute;left:0;top:0;transform-style:preserve-3d;pointer-events:none}
+.p{position:absolute;left:0;top:0;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:#e8fbff;box-shadow:0 0 14px 4px #7dd3fccc;pointer-events:none;animation:travel var(--t,3s) linear infinite}
+@keyframes travel{from{transform:translate(var(--x1),var(--y1))}to{transform:translate(var(--x2),var(--y2))}}
+.dot{position:absolute;left:0;top:0;width:16px;height:16px;margin:-8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,var(--teal));box-shadow:0 0 22px 8px #14b8a699;transform-style:preserve-3d;pointer-events:none}
+#panel{position:fixed;top:78px;right:12px;bottom:64px;width:410px;max-width:92vw;background:linear-gradient(168deg,#ffffff10,transparent 34%),var(--panel);border:1px solid #2a3d5ccc;border-radius:16px;z-index:40;display:none;flex-direction:column;backdrop-filter:blur(22px) saturate(1.4);box-shadow:0 20px 60px #000c,0 0 0 1px #ffffff0a inset,0 0 40px #14b8a622}
+#panel.open{display:flex;animation:panelIn .38s cubic-bezier(.2,.8,.2,1)}
+@keyframes panelIn{from{opacity:0;transform:translateX(26px) scale(.985)}to{opacity:1;transform:none}}
+#phead{padding:12px 16px;border-bottom:1px solid #ffffff14;background:linear-gradient(#ffffff0e,transparent)}
+#ptag{display:inline-block;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:#07121c;font-weight:800;border-radius:99px;padding:1px 9px;margin-bottom:5px;box-shadow:0 0 14px #ffffff33}
+#ptitle{font-size:15px;font-weight:700}
+#psub{font-size:11px;color:var(--dim)}
+#pclose{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer}
+#pclose:hover{color:#fff}
+#pbody{overflow-y:auto;overflow-x:hidden;padding:12px 16px 24px;scrollbar-width:thin;scrollbar-color:#33507c transparent}
+#pbody::-webkit-scrollbar{width:11px}
+#pbody::-webkit-scrollbar-thumb{background:linear-gradient(#33507c,#16263e);border-radius:99px;border:3px solid #00000000;background-clip:padding-box}
+#pbody::-webkit-scrollbar-track{background:transparent}
+#pbody h3{display:flex;align-items:center;gap:9px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#9fb4d4;margin:15px 0 6px}
+#pbody h3::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#3b5a8f99,transparent)}
+#pbody h3:first-child{margin-top:0}
+#pbody p{font-size:12px;color:#cdd9ea;margin:6px 0}
+#pbody ul{margin:4px 0 8px 18px;font-size:12px;color:#cdd9ea}
+#pbody li{margin:3px 0}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;margin:8px 0;background:#ffffff07;border:1px solid #ffffff14;border-radius:10px}
+td,th{padding:4px 7px;border-bottom:1px solid #ffffff10;text-align:left;vertical-align:top}
+th{color:#9fb4d4;font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;background:linear-gradient(#ffffff14,#ffffff05)}
+tr:nth-child(even) td{background:#ffffff05}
+tr:hover td{background:#14b8a614}
+tr:last-child td{border-bottom:none}
+tr:first-child th:first-child{border-top-left-radius:9px}tr:first-child th:last-child{border-top-right-radius:9px}
+tr:last-child td:first-child{border-bottom-left-radius:9px}tr:last-child td:last-child{border-bottom-right-radius:9px}
+td.mono,td.n{font-family:Consolas,Menlo,monospace;font-size:10.5px}
+td.mono{word-break:break-all}td.n{white-space:nowrap}
+td.num{text-align:right;font-family:Consolas,Menlo,monospace;font-size:10.5px;white-space:nowrap;color:#ffd479}
+td.dim{color:#8fa1b8}
+.logq{font-family:Consolas,Menlo,monospace;font-size:10px;color:#9fe8c8;background:#0a16205c;border:1px solid #1c403244;border-left:3px solid var(--green);border-radius:8px;padding:6px 9px;margin:6px 0;white-space:pre-wrap;word-break:break-word;box-shadow:inset 0 1px 0 #ffffff08}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:11.5px;margin:8px 0;background:#ffffff07;border:1px solid #ffffff12;border-radius:10px;padding:8px 11px}
+.kv b{color:#9fe8ff;font-weight:600;text-shadow:0 0 12px #7dd3fc44}
+.chips2{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.ch2{font-size:10.5px;border:1px solid #ffffff1c;background:#ffffff0d;color:#cfe2f8;border-radius:99px;padding:2px 10px;cursor:pointer;transition:.15s}
+.ch2:hover{border-color:#4a6ea8;color:#fff;background:#ffffff18;box-shadow:0 0 14px #3b82f666}
+#flowbar{position:fixed;left:12px;right:430px;bottom:10px;z-index:35;background:linear-gradient(170deg,#ffffff0a,transparent 40%),var(--panel);border:1px solid #2a3d5ccc;border-radius:13px;padding:9px 14px;display:none;gap:12px;align-items:center;backdrop-filter:blur(18px) saturate(1.3);box-shadow:0 10px 34px #000a,0 0 26px #14b8a61f}
+#flowbar.open{display:flex}
+#fbtn{font:inherit;font-size:12px;font-weight:700;color:#04211a;background:linear-gradient(180deg,#8ff0e2,#2dd4bf);border:none;border-radius:9px;padding:7px 16px;cursor:pointer;box-shadow:0 0 18px #14b8a655}
+#fbtn:hover{filter:brightness(1.08)}
+#fstep{font-size:10px;color:var(--dim);white-space:nowrap}
+#ftext{font-size:11.5px;color:#cdd9ea;flex:1}
+#ftext b{color:#fff}
+#anatbar.open ~ #legend,#flowbar.open ~ #legend{bottom:70px}
+#anatbar.open ~ #foot,#flowbar.open ~ #foot{bottom:106px}
+#legend{position:fixed;left:12px;bottom:10px;z-index:25;display:flex;flex-wrap:wrap;gap:6px 12px;font-size:10.5px;color:var(--dim);background:#070d16bb;border:1px solid #2a3d5c99;border-radius:11px;padding:6px 10px;max-width:55vw;backdrop-filter:blur(14px) saturate(1.2)}
+#legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;box-shadow:0 0 8px currentColor}
+#hint{position:fixed;bottom:10px;right:12px;z-index:25;font-size:10px;color:#5c6f8a}
+#foot{position:fixed;left:12px;bottom:44px;z-index:24;font-size:9.5px;color:#4d5f79;max-width:55vw}
+.frow{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#cdd9ea;margin:4px 0}
+.fn{flex:0 0 16px;height:16px;border-radius:50%;background:linear-gradient(#3b82f638,#14b8a620);border:1px solid #3b5a8f;color:#bfe3ff;font-size:9px;display:flex;align-items:center;justify-content:center;margin-top:2px;box-shadow:0 0 8px #3b82f630}
+.fline{border-left:1px dashed #2c4060;margin:2px 0 2px 7px;padding-left:12px}
+.frow:hover .fn{box-shadow:0 0 12px #3b82f6aa;border-color:#7dd3fc}
+.links{list-style:none;margin:4px 0 8px}
+.links li{font-size:11.5px;color:#cdd9ea;margin:4px 0;padding-left:9px;border-left:1px solid #ffffff16;transition:.15s}
+.links li:hover{border-left-color:#14b8a6;color:#fff}
+.links b{color:#ffd479;font-weight:600}
+#anatbar{position:fixed;left:12px;bottom:10px;z-index:35;background:linear-gradient(170deg,#ffffff0a,transparent 40%),var(--panel);border:1px solid #2a3d5ccc;border-radius:13px;padding:8px 12px;display:none;gap:8px;align-items:center;backdrop-filter:blur(18px) saturate(1.3);max-width:calc(100vw - 24px);flex-wrap:wrap;box-shadow:0 10px 34px #000a}
+#anatbar.open{display:flex}
+#anatbar .lab{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px}
+.abtn{font:inherit;font-size:11px;color:#bcd0e8;background:#0e1624;border:1px solid var(--line);border-radius:8px;padding:4px 11px;cursor:pointer;transition:.15s}
+.abtn.on{color:#04211a;background:linear-gradient(180deg,#8ff0e2,#2dd4bf);border-color:#5eead4;font-weight:700}
+.abtn:hover{border-color:#4a6ea8;box-shadow:0 0 12px #3b82f644}
+@media (max-width:900px){#panel{top:auto;height:55vh}#flowbar{right:12px}}
+</style>
+</head>
+<body>
+<header>
+<h1>Strata <span>×</span> Qwen3.8-Flash-Next <span>·</span> UD-Q4_K_XL 3D explorer</h1>
+<div class="chips">
+<span class="chip"><b>4 shards</b> · 111.3 GB GGUF</span>
+<span class="chip"><b>1,224</b> tensors · 103.7 GiB weights</span>
+<span class="chip"><b>24,576</b> experts · 71.7 GiB</span>
+<span class="chip">vocab <b>248,320</b> · ctx <b>262,144</b></span>
+<span class="chip">mmproj-F16 <b>449M</b></span>
+<span class="chip">MTP Q8_0 <b>4.14 GB</b></span>
+<span class="chip">engine <b>0.1.40.3</b></span>
+</div>
+<div class="tabs">
+<button class="tab on" data-v="model">Model tower</button>
+<button class="tab" data-v="anatomy">Layer anatomy</button>
+<button class="tab" data-v="kernels">Kernel stack</button>
+<button class="tab" data-v="stack">Strata stack</button>
+<button class="tab" data-v="flow">Prompt → output</button>
+</div>
+</header>
+<div id="bg"></div><div id="stars"></div><div id="scene"><div id="floor"></div><div id="world"></div></div><div id="vig"></div>
+<aside id="panel">
+<button id="pclose" title="close (Esc)">✕</button>
+<div id="phead"><span id="ptag">block</span><div id="ptitle"></div><div id="psub"></div></div>
+<div id="pbody"></div>
+</aside>
+<div id="anatbar">
+<span class="lab">Explode</span>
+<button class="abtn" data-u="gdn">GDN block (36×)</button>
+<button class="abtn" data-u="attn">Attention block (12×)</button>
+<button class="abtn" data-u="mtp">MTP draft layer</button>
+<button class="abtn" data-u="vit">ViT block (27×)</button>
+<button class="abtn" data-u="merger">Merger + patch embed</button>
+</div>
+<div id="flowbar">
+<button id="fbtn">▶ Play flow</button>
+<div id="fstep"></div>
+<div id="ftext"></div>
+</div>
+<div id="legend"></div>
+<div id="hint">drag = rotate · wheel = zoom · dbl-click = reset · click a block for details</div>
+<div id="foot">Built from the GGUF metadata of ~/models/Qwen3.8-Flash-Next-GGUF, the run log strata-unsloth-ud-q4_k_xl.log (engine 0.1.40.3) and the engine sources. Paths shown as ~/, hardware generalized; no keys, hostnames or user data.</div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const world=$('#world'), scene=$('#scene');
+function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+r=Math.min(255,Math.round(r*f));g=Math.min(255,Math.round(g*f));b=Math.min(255,Math.round(b*f));
+return `rgb(${r},${g},${b})`;}
+// ---- block builder: a labelled cuboid centred at (x,y,z) ----
+let blkIdx=0;
+function block(o){
+  const {w,h,d,x=0,y=0,z=0,c='#3b82f6',label='',sub='',glow=null,rot=0,open,kind}=o;
+  const b=document.createElement('div'); b.className='blk';
+  b.style.transform=`translate3d(${x}px,${y}px,${z}px) rotateY(${rot}deg)`;
+  b.style.setProperty('--c',c);
+  const inner=document.createElement('div'); inner.className='inner';
+  const dly=(blkIdx++*16)+'ms';
+  b.appendChild(inner);
+  const faces=[
+    ['front', w,h, `translate(-50%,-50%) translateZ(${d/2}px)`, 1.0, true],
+    ['back',  w,h, `translate(-50%,-50%) rotateY(180deg) translateZ(${d/2}px)`, .55, false],
+    ['right', d,h, `translate(-50%,-50%) rotateY(90deg) translateZ(${w/2}px)`, .7, false],
+    ['left',  d,h, `translate(-50%,-50%) rotateY(-90deg) translateZ(${w/2}px)`, .7, false],
+    ['top',   w,d, `translate(-50%,-50%) rotateX(90deg) translateZ(${h/2}px)`, 1.25, false],
+    ['bottom',w,d, `translate(-50%,-50%) rotateX(-90deg) translateZ(${h/2}px)`, .4, false]];
+  const bgs={
+    front:`linear-gradient(155deg,${shade(c,1.24)} 0%,${shade(c,.86)} 100%)`,
+    back:shade(c,.48),
+    right:`linear-gradient(180deg,${shade(c,.92)},${shade(c,.58)})`,
+    left:`linear-gradient(180deg,${shade(c,.84)},${shade(c,.52)})`,
+    top:`linear-gradient(160deg,${shade(c,1.55)},${shade(c,1.02)})`,
+    bottom:shade(c,.34)};
+  for(const [nm,fw,fh,tr,f,lab] of faces){
+    const el=document.createElement('div'); el.className='face';
+    el.style.cssText=`width:${fw}px;height:${fh}px;margin:0;transform:${tr};background:${bgs[nm]}`;
+    if(lab&&(label||sub)){el.innerHTML=(label?`<div class="fl">${label}</div>`:'')+(sub?`<div class="fs">${sub}</div>`:'');}
+    el.style.animationDelay=dly;
+    inner.appendChild(el);
+  }
+  const halo=document.createElement('div'); halo.className='halo';
+  halo.style.cssText=`width:${w+44}px;height:${h+44}px;transform:translate(-50%,-50%) translateZ(${-d/2-8}px);`+
+    `background:radial-gradient(closest-side,${c}88,${c}00 72%)`;
+  inner.appendChild(halo);
+  if(glow){b.querySelectorAll('.face').forEach(f=>{f.style.borderColor=glow;});}
+  if(open)b.addEventListener('click',e=>{e.stopPropagation();if(!dragged)open();});
+  world.appendChild(b); return b;
+}
+// dashed connector between two points (axis-aligned; diagonal becomes an L)
+function conn(x1,y1,x2,y2,z=0,col='#ffffff55'){
+  const seg=(sx,sy,ex,ey)=>{
+    const horiz=Math.abs(ey-sy)<8,w=Math.abs(ex-sx),h=Math.abs(ey-sy);
+    const b=document.createElement('div'); b.className='conn';
+    b.style.transform=`translate3d(${(sx+ex)/2}px,${(sy+ey)/2}px,${z}px)`;
+    const f=document.createElement('div');
+    f.style.position='absolute';f.style.left='50%';f.style.top='50%';
+    f.style.cssText+=horiz
+      ?`width:${w}px;height:0;margin:0 0 0 ${-w/2}px;border-top:2px dashed ${col}`
+      :`width:0;height:${h}px;margin:${-h/2}px 0 0 0;border-left:2px dashed ${col}`;
+    b.appendChild(f);
+    if(Math.max(w,h)>64){
+      const p=document.createElement('div'); p.className='p';
+      const a=Math.max(w,h)/2-4;
+      if(horiz){p.style.setProperty('--x1',(-a)+'px');p.style.setProperty('--x2',a+'px');p.style.setProperty('--y1','0px');p.style.setProperty('--y2','0px');}
+      else{p.style.setProperty('--y1',(-a)+'px');p.style.setProperty('--y2',a+'px');p.style.setProperty('--x1','0px');p.style.setProperty('--x2','0px');}
+      p.style.setProperty('--t',(2.4+Math.random()*2.4).toFixed(2)+'s');
+      p.style.animationDelay=(-Math.random()*3).toFixed(2)+'s';
+      b.appendChild(p);
+    }
+    world.appendChild(b);
+  };
+  if(Math.abs(y2-y1)<8||Math.abs(x2-x1)<8)seg(x1,y1,x2,y2);
+  else{seg(x1,y1,x2,y1);seg(x2,y1,x2,y2);}
+}
+// ---- camera ----
+const cam={rx:-14,ry:-26,z:0,ox:0,oy:0};
+const VIEWS={model:{rx:-8,ry:-20,z:-475,oy:-30},anatomy:{rx:-5,ry:-10,z:-70,oy:0},stack:{rx:-14,ry:-22,z:-420,oy:-70},flow:{rx:-26,ry:-18,z:-120,oy:0}};
+let cur='model';
+let parX=0,parY=0;
+function applyCam(){
+  const rx=cam.rx+parY, ry=cam.ry+parX;
+  world.style.transform=`translate(${cam.ox}px,${cam.oy}px) translateZ(${cam.z}px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+  const fl=document.getElementById('floor');
+  if(fl)fl.style.transform=`translate(${cam.ox}px,${cam.oy}px) translateZ(${cam.z}px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(430px) rotateX(90deg)`;
+}
+function panForPanel(){world.classList.add('anim');applyCam();setTimeout(()=>world.classList.remove('anim'),750);}
+let dragged=false,px=0,py=0,down=false;
+scene.addEventListener('pointerdown',e=>{down=true;dragged=false;px=e.clientX;py=e.clientY;scene.classList.add('drag');});
+window.addEventListener('pointermove',e=>{if(!down)return;
+  const dx=e.clientX-px,dy=e.clientY-py;
+  if(Math.abs(dx)+Math.abs(dy)>4)dragged=true;
+  cam.ry+=dx*.35; cam.rx=Math.max(-85,Math.min(85,cam.rx-dy*.3)); px=e.clientX;py=e.clientY; applyCam();});
+window.addEventListener('pointerup',()=>{down=false;scene.classList.remove('drag');setTimeout(()=>{dragged=false;},0);});
+scene.addEventListener('pointermove',e=>{
+  if(down)return;
+  parX=((e.clientX/innerWidth)-.5)*3.2; parY=-((e.clientY/innerHeight)-.5)*2.2; applyCam();
+});
+scene.addEventListener('wheel',e=>{e.preventDefault();cam.z=Math.max(-1400,Math.min(500,cam.z-e.deltaY*.6));applyCam();},{passive:false});
+scene.addEventListener('dblclick',()=>{const v=VIEWS[cur];world.classList.add('anim');Object.assign(cam,v,{ox:0});applyCam();setTimeout(()=>world.classList.remove('anim'),750);});
+// ---- detail panel ----
+const panel=$('#panel');
+function openPanel(d){
+  $('#ptag').textContent=d.tag; $('#ptag').style.background=d.c;
+  $('#ptitle').textContent=d.title; $('#psub').textContent=d.sub||'';
+  let h='';
+  const S=(t,body)=>h+=`<h3>${t}</h3>${body}`;
+  if(d.desc)h+=`<p>${d.desc}</p>`;
+  if(d.owner)h+=`<p style="color:#7f93ad;font-size:11px">⚙ ${d.owner}</p>`;
+  if(d.chips)h+=`<div class="chips2">`+d.chips.map(c=>`<span class="ch2" data-jump="${c.id}">${c.t}</span>`).join('')+`</div>`;
+  if(d.flow)S('Data flow — in → out',`<div>`+d.flow.map((f,i)=>
+    `<div class="frow"><span class="fn">${i+1}</span><span>${f}</span></div>`).join('')+`</div>`);
+  if(d.kv)S('Specs',`<div class="kv">`+d.kv.map(([k,v])=>`<b>${k}</b><span>${v}</span>`).join('')+`</div>`);
+  if(d.tensors)S('Tensors in this block',`<table><tr><th>name</th><th>shape</th><th>type</th><th>size</th></tr>`+
+    d.tensors.map(t=>`<tr><td class="mono">${t[0]}</td><td class="n">${t[1]}</td><td class="n">${t[2]}</td><td class="num">${t[3]}</td></tr>`).join('')+`</table>`);
+  if(d.table){const tb=d.table;S(tb.t||'Table',`<table><tr>${tb.h.map(x=>`<th>${x}</th>`).join('')}</tr>`+
+    tb.r.map(r=>`<tr>${r.map((c,j)=>`<td${tb.cls&&tb.cls[j]?' class="'+tb.cls[j]+'"':''}>${c}</td>`).join('')}</tr>`).join('')+`</table>`);}
+  if(d.steps)S('What happens here',`<ul>`+d.steps.map(s=>`<li>${s}</li>`).join('')+`</ul>`);
+  if(d.links)S('Stack relationships',`<ul class="links">`+d.links.map(([a,b])=>`<li><b>${a}</b> ${b}</li>`).join('')+`</ul>`);
+  if(d.log)S('From the run log',d.log.map(l=>`<div class="logq">${l}</div>`).join(''));
+  if(d.extra)h+=d.extra;
+  if(d.note)h+=`<p style="color:#8fa1b8;font-size:11px">${d.note}</p>`;
+  $('#pbody').innerHTML=h; panel.classList.add('open');
+  $('#pbody').querySelectorAll('[data-jump]').forEach(ch=>ch.addEventListener('click',()=>{
+    const t=$('#pbody').querySelector(`#sec-${ch.dataset.jump}`); if(t)t.scrollIntoView({behavior:'smooth',block:'start'});}));
+  if(innerWidth>900){cam.ox=-165;panForPanel();}
+}
+function closePanel(){panel.classList.remove('open');cam.ox=0;panForPanel();}
+$('#pclose').addEventListener('click',closePanel);
+window.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel();});
+// section helper (chips jump here)
+function sec(id,t,body){return `<h3 id="sec-${id}">${t}</h3>${body}`}
+// ================= MODEL TOWER (rebuilt from the GGUF tensor inventory) =================
+// Every number below was re-read from the model files (qwen4exp metadata + tensor sizes
+// computed from the GGUF data offsets) and from the engine sources / run log.
+const N_L=48, HID=2560, VOCAB=248320;
+const ATTN=[3,7,11,15,19,23,27,31,35,39,43,47];          // the 12 full-attention blocks (meta: full_attention_interval 4)
+const isAttn=i=>ATTN.includes(i);
+// expert-bank quantization per layer (measured from the shards):
+const downQ=i=>[2,4,30,46,47].includes(i)?'Q8_0':'Q5_1';  // ffn_down_exps
+const gateQ=i=>i===2?'Q5_K':'Q4_K';                       // ffn_gate/up_exps
+const expMiB=i=>i===2?1950:[4,30,46,47].includes(i)?1750:1500;
+const C={gdn:'#0f766e',attn:'#6d4fc4',moe:'#b45309',emb:'#1d4ed8',head:'#1e40af',mtp:'#15803d',ple:'#a16207',
+         mm:'#c2410c',hc:'#9d174d',ssd:'#334155',ram:'#0369a1',gpu:'#b91c1c',api:'#475569',norm:'#334155',
+         blue:'#2563eb',green:'#10b981',violet:'#6d4fc4'};
+const explodeBtn=u=>`<div class="chips2"><span class="ch2" onclick="explodeUnit('${u}')">▶ explode this block in 3D</span></div>`;
+const bankRow=i=>`<tr><td class="mono">ffn_gate_exps</td><td class="n">2560×640×512</td><td class="n">${gateQ(i)}</td><td class="num">${gateQ(i)==='Q5_K'?550:450} MiB</td></tr>
+  <tr><td class="mono">ffn_up_exps</td><td class="n">2560×640×512</td><td class="n">${gateQ(i)}</td><td class="num">${gateQ(i)==='Q5_K'?550:450} MiB</td></tr>
+  <tr><td class="mono">ffn_down_exps</td><td class="n">640×2560×512</td><td class="n">${downQ(i)}</td><td class="num">${downQ(i)==='Q8_0'?850:600} MiB</td></tr>`;
+
+// ---- shared sub-structure sections (every block has these) ----
+function moeSec(i){
+  const g=gateQ(i),d=downQ(i),per=g==='Q5_K'?550:450,perD=d==='Q8_0'?850:600;
+  return sec('moe','MoE — router + 512 experts + 1 shared',
+  `<p>Every block ends in a mixture of experts. The router is stored <b>F32</b> and scores <b>all 512</b> experts
+  for every token; only the <b>top 10</b> run, beside one always-on shared expert. An expert is a SwiGLU FFN
+  2560→640→2560 (≈4.9 M parameters, ≈2.9 MiB as packed here).</p>
+  <table><tr><th>tensor</th><th>shape</th><th>type</th><th>size</th></tr>
+  <tr><td class="mono">ffn_gate_inp</td><td class="n">2560×512</td><td class="n">F32</td><td class="num">5 MiB</td></tr>
+  ${bankRow(i)}
+  <tr><td class="mono">ffn_gate/up/down_shexp</td><td class="n">2560×640 ×2, 640×2560</td><td class="n">Q8_0</td><td class="num">3×1.7 MiB</td></tr>
+  <tr><td class="mono">ffn_gate_inp_shexp</td><td class="n">2560</td><td class="n">F32</td><td class="num">10 KiB</td></tr></table>
+  <p>One expert blob = <b>${((per*2+perD)/512).toFixed(2)} MiB</b> (gate+up+down); this layer's whole bank =
+  <b>${expMiB(i).toLocaleString('en-US')} MiB</b>${i===2?' — UD’s heaviest upgrade: Q5_K gate/up and Q8_0 down':''}${[4,30,46,47].includes(i)?' — UD keeps this layer’s down projection at Q8_0':''}.
+  The run log reports the largest blob at 3.99 MB (layer 2).</p>
+  <p><b>Data flow:</b> hidden → 512 router logits (F32) → softmax → stable top-10 ids + weights → 10 expert blobs
+  (GPU cache hit, PCIe copy, or computed in place by the CPU pool on pinned RAM) + the shared expert → weighted sum → HC write.</p>`);
+}
+function hcSec(){
+  return sec('hc','Hyper-connections — 4 residual streams, rank 320',
+  `<p>A block does not own one residual vector but <b>4 parallel 2560-wide streams</b> (4×2560 = 10240). Two
+  low-rank projections (rank 320) fold them into the one vector each sub-layer consumes, and fold the result back
+  into all four with a learned per-stream injection — the same kernel, read and write directions.</p>
+  <table><tr><th>tensor</th><th>shape</th><th>type</th><th>size</th></tr>
+  <tr><td class="mono">hc_attn_up / hc_attn_down</td><td class="n">320×10240 / 10240×320</td><td class="n">Q8_0</td><td class="num">2×3.3 MiB</td></tr>
+  <tr><td class="mono">hc_attn_norm</td><td class="n">10240</td><td class="n">F32</td><td class="num">40 KiB</td></tr>
+  <tr><td class="mono">hc_attn_inject</td><td class="n">10240×4</td><td class="n">F32</td><td class="num">160 KiB</td></tr>
+  <tr><td class="mono">hc_ffn_up / down / norm / inject</td><td class="n">the same, around the MoE half</td><td class="n">Q8_0 / F32</td><td class="num">~6.8 MiB</td></tr></table>
+  <p>Two HC reads and two HC writes per block (one pair around the mixer, one around the MoE) —
+  <b>13.7 MiB of HC weights per block</b>, 662.9 MiB for the whole model including the final output HC. The read runs
+  as a staged kernel (per-stream norm, cp.async staging) and is checked bit-for-bit against the plain read.</p>`);
+}
+function pleSec(i){
+  if(i!==1)return '';
+  return sec('ple','PLE injection — only block 1 has these tensors',
+  `<p>Block 1 is the only block with the <b>PLE</b> (per-layer embedding) path: a hashed 3-gram lookup adds
+  local-context signal before the mixer. The giant table itself lives in shard 2 (see the PLE satellite).</p>
+  <table><tr><th>tensor</th><th>shape</th><th>type</th><th>size</th></tr>
+  <tr><td class="mono">blk.1.ple_key</td><td class="n">2560×10240</td><td class="n">Q8_0</td><td class="num">26.6 MiB</td></tr>
+  <tr><td class="mono">blk.1.ple_value</td><td class="n">2560×2560</td><td class="n">Q8_0</td><td class="num">6.6 MiB</td></tr>
+  <tr><td class="mono">blk.1.ple_conv1d</td><td class="n">4×10240</td><td class="n">F32</td><td class="num">160 KiB</td></tr>
+  <tr><td class="mono">blk.1.ple_norm_query / key / conv</td><td class="n">10240</td><td class="n">F32</td><td class="num">3×40 KiB</td></tr></table>
+  <p>Rows come from the 320,001,536-row IQ4_NL table on the SSD — a few rows per token, read on demand.</p>`);
+}
+// ---- layer panels ----
+function gdnDetail(i){
+  openPanel({tag:'layer',c:C.gdn,title:`Block ${i} · Gated DeltaNet (linear attention)`,
+  sub:`36 of 48 blocks · recurrent Δ-rule · state 48×128×128, fixed per sequence`,
+  owner:'engine/strata · mixer + router + shared expert in VRAM · routed experts in the GPU cache / pinned RAM / file tiers',
+  desc:`The recurrent mixer. One fused projection emits <b>q (48 heads × 128)</b>, <b>k and v (16 groups × 128 each)</b>;
+  a causal conv (kernel 4) precedes the delta-rule update, the time step comes from per-head α/β (rank 48), and the
+  6144-wide result is gated and projected back to 2560. The recurrent state is <b>48 × 128 × 128 floats ≈ 3.0 MiB per
+  sequence</b> — fixed, so a token costs the same at 1K and at 200K context (no KV cache here).`,
+  chips:[{id:'moe',t:'MoE'},{id:'hc',t:'hyper-connections'},...(i===1?[{id:'ple',t:'PLE'}]:[])],
+  flow:['in: 4 residual streams (4×2560) from block '+(i-1),
+        'HC read: per-stream RMSNorm → rank-320 mix → one 2560 vector',
+        'attn_qkv (2560→10240: q 48×128, k 16×128, v 16×128) → causal conv k=4 → per-head dt (α, β: rank 48)',
+        'Δ-rule state update over 48×128×128 (fused_gdn.cu: 512 threads) → 6144-wide output × sigmoid gate',
+        'ssm_out 6144→2560 → HC write folds the mixer result into all 4 streams',
+        'RMSNorm → router (512 logits, F32) → top-10 experts + shared → weighted sum',
+        'HC write → 4 streams handed to block '+(i+1)+(i+1===N_L?' — then the output head':'')],
+  kv:[['mixer','Gated DeltaNet — q 48 heads × 128 · k/v 16 groups × 128'],
+      ['q / k / v width','6144 / 2048 / 2048 (attn_qkv 2560→10240)'],
+      ['conv kernel','4 (over 10240 channels)'],['dt rank','48 (ssm_alpha / ssm_beta [2560×48])'],
+      ['state','128 × 48 × 128 floats = 3.0 MiB per layer per sequence + conv 10240×3'],
+      ['inner width','6144 (ssm_out 6144→2560, gated by attn_gate)'],
+      ['RoPE','none — GDN blocks do not rotate positions'],
+      ['expert bank',`${expMiB(i).toLocaleString('en-US')} MiB (this layer)`]],
+  tensors:[['blk.'+i+'.attn_qkv.weight','2560×10240','Q8_0','26.6 MiB'],
+           ['blk.'+i+'.attn_gate.weight','2560×6144','Q8_0','15.9 MiB'],
+           ['blk.'+i+'.ssm_conv1d.weight','4×10240','F32','160 KiB'],
+           ['blk.'+i+'.ssm_alpha.weight','2560×48','F32','480 KiB'],
+           ['blk.'+i+'.ssm_beta.weight','2560×48','F32','480 KiB'],
+           ['blk.'+i+'.ssm_a','48','F32','192 B'],
+           ['blk.'+i+'.ssm_dt.bias','48','F32','192 B'],
+           ['blk.'+i+'.ssm_norm.weight','128','F32','512 B'],
+           ['blk.'+i+'.ssm_out.weight','6144×2560','Q8_0','15.9 MiB']],
+  links:[['← from',' block '+(i-1)+' (4-stream hyper-connection)'],
+         ['→ to',' block '+(i+1)+(i+1===N_L?' (then the output head)':'')],
+         ['↔ KV',' none — the Δ-rule state is rewritten per token, O(1) in context'],
+         ['↔ experts',' 10 of 512 route here per token; blobs 2.93–3.81 MiB, served by the tier system'],
+         ['↔ MTP',' the draft block 48 is a full-attention block — it does not reuse this GDN mixer'],
+         ['⚙ kernels',' fused_gdn.cu (state 128×128 per head, 512 threads) · native_gdn_preprocess.cu (conv k=4) · gr.cu / fused_gr.cu (HC) · router_top10.cu'],
+         ['⚙ runs in',' the native engine (CUDA kernels) + the CPU expert pool for cache misses']],
+  log:['strata generate: native pack: … experts (largest blob 3.99 MB), token embedding Q8_0 in mapped host memory (644 MiB, 0.2 s)'],
+  extra:explodeBtn('gdn')+moeSec(i)+hcSec()+pleSec(i)});
+}
+function attnDetail(i){
+  openPanel({tag:'layer',c:C.attn,title:`Block ${i} · Full attention + QSA indexer`,
+  sub:`12 of 48 blocks (every 4th) · sparse top-2048 · int8 KV, compression ×4`,
+  owner:'engine/strata (CUDA) · dense attention + indexer weights in VRAM · KV 32,768 resident cells/layer + pinned RAM',
+  desc:`Gated full attention: <b>24 query heads × 256</b> (attn_q emits 12288 = query and gate halves), <b>2 KV heads</b>
+  (GQA 12:1), QK-norm, partial RoPE on 64 of 256 dims (base 1e7). A BF16 <b>indexer</b> (4 heads × 128) scores every
+  past position and a block top-k keeps the <b>2,048</b> highest cells per query; attention runs only over that
+  selection, reading <b>int8</b> KV with compression ratio 4 (this layer’s entry in attention.compress_ratios).`,
+  chips:[{id:'moe',t:'MoE'},{id:'hc',t:'hyper-connections'}],
+  flow:['in: 4 residual streams from block '+(i-1),
+        'HC read → RMSNorm',
+        'attn_q 2560→12288 (24×256 query + gate) · attn_k / attn_v 2560→512 (2 heads × 256) · QK-norm',
+        'RoPE on 64 of 256 dims (base 1e7; 3 M-RoPE sections for image rows)',
+        'indexer (BF16, 4 heads × 128) scores every past position → qsa_select keeps the top 2,048 cells',
+        'flash attention over the selected int8 KV (×4 compressed) → 24 heads × 256',
+        'attn_output 6144→2560 × gate → HC write',
+        'RMSNorm → router → top-10 + shared expert → HC write → block '+(i+1)],
+  kv:[['heads','24 Q × 256 (gated) · 2 KV (GQA 12:1) · QK-norm'],
+      ['RoPE','64 of 256 dims, base 1e7, sections 11+11+10 complex pairs'],
+      ['indexer','4 heads × 128 · BF16 · top_k 2048 (meta: attention.indexer.top_k)'],
+      ['KV','int8 · 32,768 of 262,144 cells resident per layer · rest in 3.09 GiB pinned RAM · 98.41% of block reads hit VRAM (this log)'],
+      ['compression','×4 on this layer (attention.compress_ratios)'],
+      ['expert bank',`${expMiB(i).toLocaleString('en-US')} MiB (this layer)`]],
+  tensors:[['blk.'+i+'.attn_q.weight','2560×12288','Q8_0','31.9 MiB'],
+           ['blk.'+i+'.attn_k.weight','2560×512','Q8_0','1.3 MiB'],
+           ['blk.'+i+'.attn_v.weight','2560×512','Q8_0','1.3 MiB'],
+           ['blk.'+i+'.attn_q_norm.weight','256','F32','1 KiB'],
+           ['blk.'+i+'.attn_k_norm.weight','256','F32','1 KiB'],
+           ['blk.'+i+'.attn_output.weight','6144×2560','Q8_0','15.9 MiB'],
+           ['blk.'+i+'.indexer.q_proj.weight','2560×512','BF16','2.5 MiB'],
+           ['blk.'+i+'.indexer.k_proj.weight','2560×128','BF16','640 KiB'],
+           ['blk.'+i+'.indexer.q_norm / k_norm','128','F32','2×512 B']],
+  links:[['← from',' block '+(i-1)+' (4-stream HC)'],
+         ['→ to',' block '+(i+1)+' (GDN)'],
+         ['↔ KV tier',' only the indexer-selected cells are read; 98.41% are already in VRAM, the rest stream from pinned RAM'],
+         ['↔ PLE',' none here — the n-gram table only feeds block 1'],
+         ['↔ MTP',' the draft block 48 is the same attention design (own indexer, same top-2048)'],
+         ['⚙ kernels',' native_qsa_indexer.cu (4×128 BF16) → qsa_select.cu (top-2048, 256-entry tiles) → qsa_prompt_attn.cu (prefill) / native_flash_attn.cu (decode, 128 threads) · kv_stream.cu · native_rope.cu']],
+  log:['strata generate: KV streaming: 32768 of 262144 cells per QSA layer in VRAM, the K/V in 3.09 GiB of pinned RAM',
+       'strata serve: KV streaming: 98.41% of 433312476 block reads hit VRAM, 27799.4 MiB read from RAM'],
+  extra:explodeBtn('attn')+moeSec(i)+hcSec()});
+}
+// ---- input / output / satellite panels ----
+function tokDetail(){openPanel({tag:'input',c:C.api,title:'Tokenizer',sub:'gpt2 BPE · pre “qwen35” · 248,320 ids',
+ owner:'the engine’s pack tokenizer (llama.cpp-derived) · chat template from the GGUF metadata',
+ desc:`Byte-pair encoding with the <b>qwen35</b> pre-tokenizer over a <b>248,320</b>-entry vocabulary. Special ids from
+ the file: pad/bos <b>248,044</b>, eos <b>248,046</b>, the image placeholder <b>248,056</b>. The bundled chat template
+ counts images and videos and reserves placeholder tokens where the vision encoder’s rows will be spliced in.`,
+ flow:['in: the chat messages (text, and image parts for the vision path)',
+       'the chat template is applied (image/video placeholders reserved)',
+       'BPE pre-tokenize (qwen35) → merges → token ids over 248,320',
+       'out: ids to the token embedding — and the id stream also feeds the PLE 3-gram lookup'],
+ kv:[['model','gpt2 (BPE)'],['pre','qwen35'],['vocabulary','248,320'],
+     ['pad / bos','248,044 · add_bos = false'],['eos','248,046'],['image token','248,056'],
+     ['sampling defaults','top_k 20 · top_p 0.95 · temp 1.0 (from the file)']],
+ links:[['→ token_embd',' every id reads one embedding row'],
+        ['→ PLE',' the last 3 ids form the n-gram key for block 1’s table read'],
+        ['↔ vision',' image parts are replaced by placeholder ids; the mmproj rows arrive later'],
+        ['↔ server',' prompt text arrives as chat messages over the OpenAI/Anthropic-compatible API']],
+ note:'ids, merges and special tokens read from the GGUF metadata (tokenizer.ggml.*).'});}
+function embDetail(){openPanel({tag:'input',c:C.emb,title:'Token embedding',sub:'token_embd · Q8_0 · 644.1 MiB · untied from the head',
+ owner:'engine/strata · mapped host memory (no VRAM); rows dequantized on the GPU when fetched',
+ desc:`token_embd.weight <b>[2560 × 248,320] Q8_0</b> — every token id becomes a 2560-wide row. The model keeps a
+ <b>separate</b> output.weight of the same shape (untied embeddings). The table stays in mapped host memory; the
+ native embed path dequantizes one row on the GPU per lookup.`,
+ flow:['in: token ids from the tokenizer',
+       'row lookup: id → 2560 Q8_0 values in mapped host memory (644 MiB)',
+       'the row is dequantized on the GPU (native embed path)',
+       'out: the input vector for block 0’s 4-stream hyper-connection'],
+ kv:[['rows','248,320 (the vocabulary)'],['width','2560'],['type','Q8_0 (8.5 bpw)'],['size','644.1 MiB'],
+     ['tied?','no — output.weight is a separate 644.1 MiB tensor'],['load','mapped at start: 644 MiB in 0.2 s (log)']],
+ tensors:[['token_embd.weight','2560×248320','Q8_0','644.1 MiB']],
+ links:[['← tokenizer',' ids from the BPE pass'],
+        ['→ block 0',' the first GDN block'],
+        ['↔ PLE',' block 1 adds the 160-wide n-gram rows on top of this signal'],
+        ['↔ MTP',' the draft file ships its own copy of this table']],
+ log:['strata generate: native pack: … token embedding Q8_0 in mapped host memory (644 MiB, 0.2 s)']});}
+function pleDetail(){openPanel({tag:'input',c:C.ple,title:'PLE — per-layer n-gram embedding table',
+ sub:'per_layer_token_embd · IQ4_NL · 26.82 GiB · 320,001,536 rows · SSD',
+ owner:'engine/strata · the table stays in GGUF shard 2, read unbuffered from the SSD (no RAM copy)',
+ desc:`per_layer_token_embd.weight <b>[160 × 320,001,536] IQ4_NL</b> (4.5 bpw): a hashed <b>3-gram</b> table
+ (ngram_size 3, 8 heads per n-gram order, 16 partitions of ≈20M rows each — head_vocab_sizes sum to 320,001,446).
+ It injects local context at <b>block 1 only</b> (ple.layers = [1]); a few rows are read per token, straight from the
+ file. Per-layer input width 160.`,
+ flow:['in: the last 3 token ids of the chunk',
+       'hash → 16 partition offsets → a few row addresses',
+       'direct (pread) reads of IQ4_NL rows from shard 2 on the SSD',
+       'block 1’s ple_key / ple_value / ple_conv1d mix them into the residual stream',
+       'out: a context-enriched signal for block 1’s mixer'],
+ kv:[['rows','320,001,536 × 160'],['format','IQ4_NL (4.5 bpw)'],['size','26.82 GiB (28.8 GB)'],
+     ['n-gram','3 · 8 heads per order · 16 partitions'],['used at','block 1 only (meta: ple.layers = [1])'],
+     ['special ids','eos 248,044 · image 248,056'],
+     ['I/O','direct reads; keep-alive page after 100 ms idle, dropped 60 s after the last request']],
+ tensors:[['per_layer_token_embd.weight','160×320001536','IQ4_NL','26.82 GiB'],
+          ['blk.1.ple_key.weight','2560×10240','Q8_0','26.6 MiB'],
+          ['blk.1.ple_value.weight','2560×2560','Q8_0','6.6 MiB'],
+          ['blk.1.ple_conv1d.weight','4×10240','F32','160 KiB'],
+          ['blk.1.ple_norm_query / key / conv','10240','F32','3×40 KiB']],
+ links:[['← SSD',' shard 2 of the GGUF (00002-of-00004)'],
+        ['→ block 1',' the only block with the PLE tensors'],
+        ['↔ tiers',' no RAM/VRAM copy — rows are read on demand'],
+        ['↔ tokenizer',' the n-gram ids come from the same token stream']],
+ log:['strata generate: PLE on, table 320001536 rows of …-00002-of-00004.gguf']});}
+function expertsDetail(){openPanel({tag:'moe',c:C.moe,title:'Routed experts — 512 per block × 48',
+ sub:'24,576 experts · 71.73 GiB of the 103.68 GiB weights · top-10 + 1 shared',
+ owner:'split across three tiers: VRAM expert cache · page-locked RAM copy · the mmap’d GGUF (file tier)',
+ desc:`Every block has its own bank of 512 experts (SwiGLU 2560→640→2560, ≈4.9 M parameters each); only the
+ <b>top 10</b> run per token plus the always-on shared expert. The banks dominate the file: 71.73 GiB of 103.68 GiB.
+ Sizes per layer: 1,500 MiB normally, 1,750 MiB on L4/30/46/47 (Q8_0 down), 1,950 MiB on L2 (Q5_K gate/up too).
+ At runtime a blob is ≈2.93 MiB (3.42 on the Q8_0-down layers, 3.81 on L2).`,
+ flow:['router picks 10 ids per token per block',
+       'each id is looked up in the VRAM expert cache (5,261 slots, 15.34 GiB)',
+       'hit → computed on the GPU (int8 __dp4a grouped kernel)',
+       'miss → copied over PCIe, or computed in place by the CPU pool on pinned RAM (56.38 GiB, 19,315 experts)',
+       'never touched since start → still in the mmap’d file, read through the OS cache'],
+ kv:[['experts','24,576 routed + 48 shared'],['bank per layer','1,500 / 1,750 / 1,950 MiB by layer'],
+     ['total','71.73 GiB'],['blob','2.93–3.81 MiB (largest 3.99 MB, log)'],
+     ['cache','5,261 slots · 15.34 GiB VRAM · profile-ranked, no eviction'],
+     ['pinned RAM','56.38 GiB · 19,315 experts · copied in 30 s at start'],
+     ['hit rate','62.5–77.8% of decode lookups in this log']],
+ links:[['← every block',' each of the 48 banks routes here'],
+        ['↔ Strata stack',' the tier system that serves these blobs'],
+        ['↔ Kernel stack',' s2_expert_grouped.cu (GPU) · the AVX2 pool (CPU) · native_moe.cu (reduce)'],
+        ['↔ MTP',' the draft block has its own 512-expert bank (all Q8_0, resident)']],
+ log:['strata serve: decode expert cache hit rate: 77.8% (150221 hits / 193208 lookups)',
+      'strata serve: resident RAM: 56.38 GiB of experts in RAM']});}
+function headDetail(){openPanel({tag:'output',c:C.head,title:'Output head + final hyper-connection',
+ sub:'output.weight · Q8_0 · 644.1 MiB · 248,320 logits per token',
+ owner:'engine/strata (CUDA) · final HC + head weights in VRAM (native head path)',
+ desc:`The last HC (output_hc_up/down [320↔10240] Q8_0 + output_hc_norm) folds the 4 streams into one 2560 vector,
+ RMSNorm (eps 1e-6) follows, then <b>output.weight [2560 × 248,320] Q8_0</b> produces the logits. The head runs on the
+ native path: NativeHead loads output.weight as stored and picks the kernel by type (a Q5_K-typed head would take
+ native_q5_k_f32; this file’s head is Q8_0, so activations quantize to Q8_1 and the generic MMVQ runs). The log’s
+ “experimental native Q5_K head” line is that path’s legacy label — its byte count, 675,430,400, is exactly this
+ Q8_0 tensor.`,
+ flow:['in: the 4-stream output of block 47',
+       'final HC read → one 2560 vector → RMSNorm',
+       'output.weight → 248,320 logits',
+       'sampler: greedy (clustered argmax, 8 CTAs × 1,024 threads — 6 µs vs 40 µs single-block on the bench card) or top_k 20 · top_p 0.95 · temp 1.0',
+       'out: token id → the server, and back in as the next decode iteration'],
+ kv:[['logits','248,320 per token'],['type','Q8_0 (as stored; 644.1 MiB = 675,430,400 bytes)'],
+     ['final HC','output_hc_up/down 2×3.3 MiB Q8_0 · output_hc_norm 40 KiB F32'],
+     ['sampler','clustered argmax or top-k / top-p / min-p (sampler.cu)']],
+ tensors:[['output.weight','2560×248320','Q8_0','644.1 MiB'],
+          ['output_hc_down / up','10240×320 / 320×10240','Q8_0','2×3.3 MiB'],
+          ['output_hc_norm','10240','F32','40 KiB']],
+ links:[['← block 47',' the last transformer block'],
+        ['→ sampler',' one id per position (drafts are verified before this counts)'],
+        ['↔ MTP',' the draft has its own small 106,299-id head (275.7 MiB)'],
+        ['↔ server',' ids travel over the engine pipe, then SSE to the client'],
+        ['⚙ kernels',' native_mmvq.cu / native_q5_k_f32 (head mat-vec) · sampler.cu (clustered argmax)']],
+ log:['strata generate: experimental native Q5_K head, 675430400 bytes, in 0.1 s']});}
+// ---- the model tower ----
+let LBAR=[],TSAT={},tSteps=[],tRun=false,tDotEl=null;
+function buildModel(){
+  const W=330,H=16,D=110,step=18,y0=470,my=y0-N_L*step-30;
+  LBAR=[];TSAT={};tRun=false;
+  // -- HC residual rail: the 4 streams every block reads and writes --
+  const railTop=y0-47*step-8, railBot=y0+8, railY=(railTop+railBot)/2, railH=railBot-railTop;
+  for(let k=0;k<4;k++)
+    block({w:8,h:railH,d:26,x:-252+k*14,y:railY,z:-30,c:C.hc,label:'',sub:'',open:hcSecAsPanel});
+  block({w:150,h:30,d:26,x:-260,y:-410,z:-30,c:C.hc,label:'4 RESIDUAL STREAMS × 2560',sub:'HC rank 320',open:hcSecAsPanel});
+  // -- input chain --
+  TSAT.tok=block({w:W+40,h:44,d:D+20,x:0,y:y0+116,z:0,c:C.api,label:'TOKENIZER',sub:'BPE · pre qwen35 · 248,320 ids',open:tokDetail});
+  TSAT.emb=block({w:W+40,h:44,d:D+20,x:0,y:y0+58,z:0,c:C.emb,label:'TOKEN EMBEDDING',sub:'Q8_0 · 644.1 MiB · untied',open:embDetail});
+  conn(0,y0+94,0,y0+80,0,'#ffffff2e');
+  // -- the 48 blocks --
+  for(let i=0;i<N_L;i++){
+    const a=isAttn(i);
+    const b=block({w:W,h:H,d:D,x:0,y:y0-i*step,z:0,c:a?C.attn:C.gdn,
+      label:`L${i} · ${a?'full attention + QSA':'Gated DeltaNet'}`,sub:'',
+      glow:i===1?'#eab308':([2,4,30,46,47].includes(i)?'#ef4444':null),
+      open:a?()=>attnDetail(i):()=>gdnDetail(i)});
+    if(i===1){const f=b.querySelector('.face'),e=document.createElement('span');e.className='kbd';e.textContent='PLE';f.appendChild(e);}
+    if([2,4,30,46,47].includes(i)){const f=b.querySelector('.face'),e=document.createElement('span');e.className='kbd';
+      e.textContent=i===2?'1.95':'1.75';f.appendChild(e);}
+    LBAR.push(b);
+  }
+  conn(0,y0+36,0,my+22,0,'#ffffff14');
+  // -- output --
+  TSAT.head=block({w:W+40,h:44,d:D+20,x:0,y:my,z:0,c:C.head,label:'OUTPUT HEAD',sub:'final HC + Q8_0 · 248,320 logits',open:headDetail});
+  // -- satellites: MTP, PLE, experts, vision --
+  TSAT.mtp=block({w:210,h:64,d:90,x:360,y:my+40,z:0,c:C.mtp,label:'MTP DRAFT (blk.48)',sub:'attention block · drafts ≤4',open:mtpDetail});
+  conn(W/2+20,my,255,my+40,0,'#22c55e88');
+  TSAT.ple=block({w:210,h:64,d:90,x:330,y:y0-8,z:0,c:C.ple,label:'PLE 3-GRAM TABLE',sub:'IQ4_NL · 26.8 GiB · SSD',open:pleDetail});
+  conn(W/2+20,y0-8,225,y0-8,0,'#eab30888');
+  TSAT.exp=block({w:210,h:64,d:90,x:340,y:170,z:0,c:C.moe,label:'EXPERTS ×512/BLOCK',sub:'24,576 · 71.7 GiB · 3 tiers',open:expertsDetail});
+  conn(W/2+8,y0-8*step,235,142,0,'#b4530955');
+  conn(W/2+8,y0-24*step,235,170,0,'#b4530955');
+  conn(W/2+8,y0-40*step,235,198,0,'#b4530955');
+  const mx=-470;
+  block({w:190,h:40,d:80,x:mx,y:y0-40,z:0,c:C.mm,label:'MERGER → 2560 rows',sub:'2×2 · MLP → 2560',rot:14,open:()=>mmDetail('merge')});
+  block({w:190,h:96,d:80,x:mx,y:y0-140,z:0,c:C.mm,label:'ViT ENCODER ×27',sub:'1152 · 16 heads · F16',rot:14,open:()=>mmDetail('vit')});
+  block({w:190,h:40,d:80,x:mx,y:y0-242,z:0,c:C.mm,label:'PATCH EMBED 16×16',sub:'768² → 2,304 patches',rot:14,open:()=>mmDetail('patch')});
+  conn(mx+95,y0-40,-W/2-20,y0+40,0,'#f9731688');
+  conn(mx+95,y0-242,-W/2-20,y0+70,0,'#f9731644');
+  // -- the autoregressive loop: sampled token back to the tokenizer --
+  conn(465,my+40,520,my+40,0,'#22c55e66');
+  conn(520,my+40,520,y0+116,0,'#22c55e66');
+  conn(520,y0+116,W/2+20,y0+116,0,'#22c55e66');
+  // -- the travelling token --
+  tDotEl=document.createElement('div');tDotEl.className='dot';
+  tDotEl.style.background='radial-gradient(circle at 35% 35%,#fff,#fbbf24)';
+  tDotEl.style.boxShadow='0 0 22px 8px #fbbf2499';
+  tDotEl.style.opacity=0;world.appendChild(tDotEl);
+  tSteps=[{x:0,y:y0+116,sel:[TSAT.tok],ms:1500,txt:'<b>tokenize</b> — BPE (gpt2, pre “qwen35”) turns the prompt into ids over the 248,320-word vocabulary'},
+    {x:0,y:y0+58,sel:[TSAT.emb],ms:1100,txt:'<b>token_embd</b> — each id reads one 2560-wide Q8_0 row (untied from the output head)'}];
+  for(let i=0;i<N_L;i++){
+    const a=isAttn(i);
+    tSteps.push({x:0,y:y0-i*step,sel:[LBAR[i],...(i===1?[TSAT.ple]:[])],ms:a?420:(i===1?520:150),
+      txt:(i===1?'<b>L1 · GDN + PLE</b> — the 3-gram table adds a 160-wide row read from the SSD, then the Δ-rule update'
+        :a?`<b>L${i} · attention</b> — HC read → q/k/v (24 heads, 2 KV) → indexer scores every past position → top-2,048 cells → int8 KV → gated output → MoE`
+        :`<b>L${i} · GDN</b> — HC read folds 4 streams into 1 → conv k=4 → Δ-rule state update (48×128×128) → gate → router top-10 → HC write`)});
+  }
+  tSteps.push({x:0,y:my,sel:[TSAT.head],ms:1400,
+    txt:'<b>output head</b> — final HC → RMSNorm → 248,320 logits → sample one token (clustered argmax or top-k/p)'},
+    {x:360,y:my+40,sel:[TSAT.mtp],ms:1400,
+    txt:'<b>MTP draft</b> — blk.48 drafts up to 4 next tokens on the priority stream; the whole tower verifies them in one pass'},
+    {x:520,y:(my+40+y0+116)/2,sel:[],ms:900,
+    txt:'<b>↻ loop</b> — the accepted token feeds back into the tokenizer: the next decode iteration begins'});
+  $('#fbtn').textContent='▶ Play token flow';
+  $('#fstep').textContent='token flow';
+  $('#ftext').innerHTML='<b>One token through the model</b> — press play to follow it: tokenizer → embedding → 48 blocks (36 GDN + 12 attention) → head → MTP → back to the start. The rail on the left is the 4-stream hyper-connection residual every block reads and writes.';
+  legend([[C.gdn,'Gated DeltaNet (36)'],[C.attn,'full attention + QSA (12)'],[C.hc,'HC · 4 residual streams'],
+    ['#ef4444','UD upgrade (L2,4,30,46,47) — bank size in MiB on the bar'],[C.mtp,'MTP draft'],[C.ple,'PLE table'],
+    [C.mm,'vision (mmproj)'],['#fbbf24','● the travelling token']]);
+}
+function hcSecAsPanel(){openPanel({tag:'residual',c:C.hc,title:'Hyper-connections — 4 residual streams',
+  sub:'4 × 2560 · rank 320 · 13.7 MiB per block · 662.9 MiB total',
+  owner:'engine/strata · HC weights in VRAM (Q8_0 up/down, F32 norms/inject)',
+  desc:`This rail is the model’s residual system. Each block reads the <b>4 streams</b> through a rank-320 mix and
+  writes its result back into all four — twice per block (around the mixer and around the MoE), once more at the
+  output. Tensors per block: hc_attn_* and hc_ffn_* (up 320→10240, down 10240→320, norm, inject [10240×4]).`,
+  flow:['in: 4 streams × 2560 from the previous block',
+        'per-stream RMSNorm (hc_*_norm, F32)',
+        'down 10240→320 → weighted mix → one 2560 vector per sub-layer',
+        'sub-layer result → up 320→10240 + per-stream inject → all 4 streams'],
+  kv:[['streams','4 × 2560 (10240)'],['rank','320'],['per block','13.7 MiB (2 sub-layers)'],
+      ['whole model','662.9 MiB including output_hc'],['kernels','gr.cu · fused_gr.cu (staged, cp.async)']],
+  links:[['↔ every block',' the rail the token rides between blocks'],
+         ['↔ Kernel stack',' the HC read/write kernels'],
+         ['↔ anatomy',' the exploded HC view']],
+  extra:hcSec()});}
+// ---- the token-flow player ----
+let tIdx=-1;
+function tShow(n){
+  tIdx=n;const s=tSteps[n];
+  tDotEl.style.opacity=1;
+  tDotEl.style.transition=`transform ${Math.min(s.ms,380)}ms cubic-bezier(.3,.7,.3,1),opacity .25s`;
+  tDotEl.style.transform=`translate3d(${s.x}px,${s.y-30}px,70px)`;
+  document.querySelectorAll('#world .blk').forEach(b=>b.classList.remove('flow'));
+  s.sel.forEach(el=>el&&el.classList.add('flow'));
+  $('#fstep').textContent=`token step ${n+1} / ${tSteps.length}`;
+  $('#ftext').innerHTML=s.txt;
+}
+function tPlay(){
+  if(tRun){tRun=false;clearTimeout(fTimer);fTimer=null;$('#fbtn').textContent='▶ Play token flow';return;}
+  tRun=true;$('#fbtn').textContent='⏸ Pause';
+  let n=(tIdx+1)%tSteps.length;tShow(n);
+  const step=()=>{if(!tRun)return;n=(n+1)%tSteps.length;tShow(n);fTimer=setTimeout(step,tSteps[n].ms);};
+  fTimer=setTimeout(step,tSteps[n].ms);
+}
+// ================= MTP + VISION DETAILS =================
+function mtpDetail(){openPanel({tag:'draft',c:C.mtp,title:'MTP draft layer (blk.48)',
+ sub:'Q8_0 · 512 experts · nextn projections · 835 MiB VRAM',
+ owner:'engine/strata (CUDA) · weights in VRAM (835 MiB) · draft vocab 106,299 ids in the mtp/rt pack',
+ desc:`The model's own <b>next-token prediction layer</b>, shipped as mtp-Qwen3.8-Flash-Next-Q8_0.gguf (4.14 GB;
+ a 2.79 GB variant shares the embeddings). It concatenates the verified hidden state with the last token's embedding,
+ runs one attention + MoE block (its 512 experts load as 675 MiB of packed blobs), and proposes up to 4 candidates. The 48-layer model then
+ verifies them in one pass — the draft never decides the answer.`,
+ flow:['in: the hidden state of the last verified token + that token’s embedding (2 × 2560)',
+       'enorm [2560] / hnorm [10240] normalise both halves',
+       'eh_proj [5120→2560] fuses them into one 2560 vector',
+       'one full-attention block (q/k/v, indexer, 24 heads) + MoE (512 experts)',
+       'hc_head (final hyper-connection) → the draft head over the 106,299-id subset',
+       'sample up to 4 tokens, stop when p < spec-min-p (0.5)',
+       'out: candidate ids → the verify window of the main model'],
+ kv:[['file','MTP/mtp-Qwen3.8-Flash-Next-Q8_0.gguf · 4.14 GB · 34 tensors'],
+     ['variant','mtp-…-shared-Q8_0.gguf · 2.79 GB (shares embeddings)'],
+     ['experts','512 · GGUF Q8_0 (2,550 MiB) → rt pack blobs 675 MiB (1.32 MiB/expert)'],
+     ['draft vocab','106,299 ids · head 275.7 MiB'],
+     ['VRAM','835 MiB (experts 675 + dense 111)'],
+     ['proposals','≤4 per round · 81–85% accepted in the log']],
+ tensors:[['blk.48.nextn.eh_proj.weight','5120×2560','Q8_0','13.3 MiB'],
+          ['blk.48.nextn.enorm / hnorm','2560 / 10240','F32','—'],
+          ['blk.48.nextn.hc_head_up / down','320×10240 / 10240×320','Q8_0','6.6 MiB'],
+          ['blk.48.nextn.hc_head_norm','10240','F32','40 KiB'],
+          ['blk.48.attn_q / k / v / output','12288 / 512 / 512 / 6144','Q8_0','~51 MiB'],
+          ['blk.48.indexer.q_proj / k_proj','512 / 128','BF16','~3 MiB'],
+          ['blk.48.ffn_gate/up/down_exps','2560×640×512','Q8_0','2,550 MiB in the GGUF'],
+          ['blk.48.hc_attn/ffn_*','10240×320 …','Q8_0 / F32','~16 MiB'],
+          ['token_embd + output.weight','2560×248320','Q8_0','2×644 MiB']],
+ links:[['← main model',' verified hidden state after the last accept'],
+        ['→ verify window',' drafts are checked by all 48 blocks in one pass'],
+        ['↔ KV',' the draft layer keeps its own K/V for the draft tokens'],
+        ['↔ expert cache',' its experts live in VRAM (675 MiB), not in the tier swap system'],
+        ['⚙ kernels',' the draft head runs on the priority stream (mtp.cpp) · sampler.cu (clustered argmax) · the same native_flash_attn.cu and qsa_select.cu as the attention blocks'],
+        ['↔ server',' drafting is invisible to the API: same tokens, fewer forward passes']],
+ log:['strata mtp: draft layer loaded, 835 MiB of VRAM (experts 675, dense 111), files read in 0.29 s (2674 MiB/s)',
+      'strata mtp: draft head over 106299 tokens (275.7 MiB)',
+      'strata verify: window up to 6 tokens, 96.1 MiB of device buffers']});}
+function mmDetail(part){
+  const D={
+   patch:{title:'Vision patch embed',desc:'A 768×768 image is cut into 16×16 patches (48×48 = 2,304); two convs map each patch to 1152 and learned position embeddings are added.',
+     tensors:[['v.patch_embd.weight','16×16×3×1152','F16','1.7 MiB'],['v.patch_embd.weight.1','16×16×3×1152','F16','1.7 MiB'],
+              ['v.patch_embd.bias','1152','F32','4.5 KiB'],['v.position_embd.weight','1152×2304','F32','10.1 MiB']],
+     flow:['in: RGB image resized to 768×768','16×16 patches → conv ×2 → 1152-wide rows','+ position embeddings','out: 2,304 token rows for the ViT']},
+   vit:{title:'ViT encoder — 27 blocks',desc:'CLIP-style transformer, F16: 27 × (LN → 16-head attention → LN → FFN 1152→4304, GELU). 449M parameters, 904 MB file.',
+     tensors:[['v.blk.N.ln1/ln2','1152','F32','2×4.5 KiB'],['v.blk.N.attn_qkv','1152×3456','F16','7.6 MiB'],
+              ['v.blk.N.attn_out','1152×1152','F16','2.5 MiB'],['v.blk.N.ffn_up','1152×4304','F16','9.5 MiB'],
+              ['v.blk.N.ffn_down','4304×1152','F16','9.5 MiB'],['v.blk.N.*.bias','1152 / 3456 / 4304','F32','—']],
+     flow:['in: 2,304 patch rows','LN → QKV → 16-head attention → +residual','LN → FFN 1152→4304 (GELU) → 1152 → +residual','×27 blocks','out: 2,304 mixed rows']},
+   merge:{title:'Merger → model space',desc:'qwen3vl_merger: each 2×2 group of patches (4×1152 = 4608) is MLP-projected to one 2560-wide row — the model’s embedding width. A 768² image becomes 576 rows with 2-D (M-RoPE) positions.',
+     tensors:[['v.post_ln.weight/bias','1152','F32','9 KiB'],['mm.0.weight','4608×4608','F16','40.5 MiB'],
+              ['mm.0.bias','4608','F32','18 KiB'],['mm.2.weight','4608×2560','F16','22.5 MiB'],['mm.2.bias','2560','F32','10 KiB']],
+     flow:['in: 2,304 × 1152 ViT rows','post_ln','2×2 spatial merge → 576 × 4608','mm.0 (4608→4608) → mm.2 (4608→2560)','out: 576 embedding rows at 2560, spliced at the image placeholders']}};
+  const d=D[part];
+  openPanel({tag:'vision',c:C.mm,title:d.title,sub:'mmproj-F16.gguf · 904 MB · 334 tensors · F16',
+   owner:'vision encoder process (llama.cpp mtmd), started by serve/server.py before the engine when images are on',
+   desc:d.desc,flow:d.flow,
+   kv:[['file','~/models/Qwen3.8-Flash-Next-GGUF/mmproj-F16.gguf'],
+       ['image','768×768 · patch 16 · mean/std 0.5'],['encoder','27 blocks · 1152 wide · 16 heads · FFN 4304'],
+       ['projection','2560 (the model width)'],['image token id','248,056'],['output','576 rows per 768² image']],
+   tensors:d.tensors,
+   links:[['← server',' POST /v1/chat/completions with an image part → “ENC &lt;image&gt; &lt;out&gt;” to the encoder'],
+          ['→ engine',' 576 × 2560 rows handed back to the engine, placed at the image placeholders'],
+          ['↔ tokenizer',' the chat template counts images and reserves the placeholder tokens'],
+          ['↔ blocks',' rows enter at block 0 like word embeddings; M-RoPE gives each a 2-D position']],
+   note:'Answers match llama.cpp multimodal token-for-token on the test images (docs/DETAILS.md).'});}
+
+// ================= ANATOMY (exploded sub-blocks) =================
+const ANAT={
+ gdn:{title:'Gated DeltaNet block — exploded',units:[
+  {t:'HC read',s:'4 streams → 1 vector',c:C.hc,d:{title:'Hyper-connection read',sub:'4 × 2560 streams, rank 320',desc:'Mixes the four residual streams into one 2560-wide vector before the mixer.',
+   flow:['in: 4 × 2560 streams','hc_attn_up (10240→320) → hc_attn_norm → hc_attn_down (320→10240)','hc_attn_inject [10240×4] adds the per-stream gains','out: one 2560 vector (RMSNorm next)'],
+   tensors:[['hc_attn_up','320×10240','Q8_0','3.3 MiB'],['hc_attn_down','10240×320','Q8_0','3.3 MiB'],['hc_attn_norm','10240','F32','40 KiB'],['hc_attn_inject','10240×4','F32','160 KiB']]}},
+  {t:'RMSNorm',s:'ε 1e-6',c:C.norm,d:{title:'RMSNorm',sub:'2560-wide, ε 1e-6',desc:'The block’s input normalisation, applied before every mixer.',
+   flow:['in: 2560 vector','x / √(mean(x²)+ε) × weight','out: normalized vector → q/k/v projections']}},
+  {t:'q / k / v + gate',s:'2560 → 10240',c:C.gdn,d:{title:'GDN projections',sub:'q 6144 · k 2048 · v 2048 · gate 6144',desc:'One fused projection produces the DeltaNet queries, keys and values (16 groups × 128 state) plus a separate output gate.',
+   flow:['in: normalized 2560 vector','attn_qkv → 10240 (q 6144, k 2048, v 2048)','attn_gate → 6144 (output gate)','out: q/k/v + gate'],
+   tensors:[['attn_qkv','2560×10240','Q8_0','26.6 MiB'],['attn_gate','2560×6144','Q8_0','15.9 MiB']]}},
+  {t:'Short conv (k=4)',s:'causal depthwise',c:C.gdn,d:{title:'Causal short convolution',sub:'kernel 4, width 10240',desc:'A depthwise causal convolution over the last 4 positions, the local mixing of the DeltaNet.',
+   flow:['in: q/k/v stream','4-tap causal conv per channel','out: locally mixed q/k/v → delta-rule update'],
+   tensors:[['ssm_conv1d','4×10240','F32','160 KiB']]}},
+  {t:'Delta-rule state',s:'16 groups × 128',c:C.gdn,d:{title:'Gated delta-rule state',sub:'O(1) per token',desc:'The linear-attention core: 16 groups of 128-float state are decayed and updated per token. Fixed size — no KV growth with context.',
+   flow:['in: convolved q/k/v','per group: decay α, write β, rank-1 delta update','state += β·(v − kᵀS) kᵀ ; read S = α·S + update','out: 6144-wide state read'],
+   tensors:[['ssm_a','48','F32','192 B'],['ssm_alpha','2560×48','F32','480 KiB'],['ssm_beta','2560×48','F32','480 KiB'],['ssm_dt.bias','48','F32','192 B'],['ssm_norm','128','F32','512 B']]}},
+  {t:'Output proj',s:'6144 → 2560',c:C.gdn,d:{title:'State output projection',sub:'gated 6144→2560',desc:'Projects the read-out of the state back to the model width and multiplies by the gate.',
+   flow:['in: 6144 state read × gate','ssm_out 6144→2560','out: 2560 mixer result'],
+   tensors:[['ssm_out','6144×2560','Q8_0','15.9 MiB']]}},
+  {t:'HC write',s:'back to 4 streams',c:C.hc,d:{title:'Hyper-connection write',sub:'2560 → 4 × 2560',desc:'Folds the mixer result back into the four residual streams.',
+   flow:['in: 2560 result','hc_attn_up/down + inject','out: 4 updated streams'],
+   tensors:[['hc_attn_up/down','320×10240','Q8_0','6.6 MiB'],['hc_attn_inject','10240×4','F32','160 KiB']]}},
+  {t:'Router',s:'2560 → 512',c:C.moe,d:{title:'MoE router',sub:'512 experts, top 10',desc:'Scores every expert for every token; only the top 10 run.',
+   flow:['in: normalized hidden state','ffn_gate_inp → 512 logits','softmax → top-10 ids + weights (plus the shared expert)','out: 10 expert ids, 10 weights'],
+   tensors:[['ffn_gate_inp','2560×512','F32','5 MiB']],
+   links:[['↔ expert cache','the 10 ids are looked up in the VRAM cache (49–86% hit), then RAM, then SSD']]}},
+  {t:'Expert bank',s:'10 of 512 active',c:C.moe,d:{title:'Routed experts',sub:'512 × SwiGLU 2560→640→2560',desc:'Each token activates 10 of the 512 experts. Gate/up are Q4_K, down Q5_1 (Q8_0 on UD’s upgraded layers).',
+   flow:['in: 10 expert ids + token vector','gate/up (2560→640) → SwiGLU → down (640→2560)','expert runs on the GPU cache, or the CPU pool from pinned RAM, or a PCIe copy','out: 10 weighted 2560 vectors'],
+   tensors:[['ffn_gate_exps','2560×640×512','Q4_K','450 MiB'],['ffn_up_exps','2560×640×512','Q4_K','450 MiB'],['ffn_down_exps','640×2560×512','Q5_1','600 MiB']],
+   links:[['↔ tiers','blob ≈ 2.9 MiB; 480 lookups per token across the 48 blocks'],['↔ PCIe','55% of missed experts are copied to the GPU instead of run on the CPU']]}},
+  {t:'Shared expert',s:'always on',c:C.moe,d:{title:'Shared expert',sub:'one per block, always active',desc:'Runs for every token beside the routed experts.',
+   flow:['in: token vector','gate/up → SwiGLU → down','out: added to the routed sum'],
+   tensors:[['ffn_gate_shexp','2560×640','Q8_0','1.7 MiB'],['ffn_up_shexp','2560×640','Q8_0','1.7 MiB'],['ffn_down_shexp','640×2560','Q8_0','1.7 MiB']]}},
+  {t:'HC write 2',s:'→ next block',c:C.hc,d:{title:'Second hyper-connection write',sub:'2560 → 4 × 2560',desc:'Folds the MoE output into the streams and hands them to the next block.',
+   flow:['in: routed + shared result','hc_ffn_up/down + inject','out: 4 streams → next block (or the output head)'],
+   tensors:[['hc_ffn_up/down','320×10240','Q8_0','6.6 MiB'],['hc_ffn_inject','10240×4','F32','160 KiB']],
+   links:[['→ next','the 4 streams become block i+1’s input']]}}]},
+ attn:{title:'Full-attention block (QSA) — exploded',units:[
+  {t:'HC read',s:'4 streams → 1',c:C.hc,d:{title:'Hyper-connection read',sub:'4 × 2560, rank 320',desc:'Same staged HC read as in the GDN blocks.',
+   flow:['in: 4 streams','low-rank mix + inject','out: one 2560 vector'],tensors:[['hc_attn_up/down','320×10240','Q8_0','6.6 MiB']]}},
+  {t:'RMSNorm',s:'ε 1e-6',c:C.norm,d:{title:'RMSNorm',sub:'2560',desc:'Input normalisation.',flow:['in: 2560','out: normalized 2560']}},
+  {t:'q projection',s:'2560 → 12288',c:C.attn,d:{title:'Query + gate projection',sub:'24 heads × 256 × 2',desc:'The query projection emits both the queries and a gate (Qwen gated attention).',
+   flow:['in: 2560','attn_q → 12288 (q + gate)','per-head RMSNorm (256)','out: 24 × 256 queries + gate'],
+   tensors:[['attn_q','2560×12288','Q8_0','32 MiB'],['attn_q_norm','256','F32','1 KiB']]}},
+  {t:'k / v projection',s:'2 KV heads',c:C.attn,d:{title:'Key/Value projection',sub:'2 heads × 256 · GQA 12:1',desc:'Only two KV heads serve all 24 query heads — 12× less KV memory.',
+   flow:['in: 2560','attn_k / attn_v → 512 each','k head norm (256)','out: 2 × 256 keys/values per token'],
+   tensors:[['attn_k','2560×512','Q8_0','1.3 MiB'],['attn_v','2560×512','Q8_0','1.3 MiB'],['attn_k_norm','256','F32','1 KiB']]}},
+  {t:'QSA indexer',s:'top-2048 of all KV',c:C.attn,d:{title:'Sparse attention indexer',sub:'4 heads × 128, BF16',desc:'Scores every past position cheaply and selects the best 2,048 KV entries for each query.',
+   flow:['in: query + the key cache','indexer.q_proj (512) · indexer.k_proj (128), BF16','score all positions → top-k = 2048','out: the KV entries attention will read'],
+   tensors:[['indexer.q_proj','2560×512','BF16','2.5 MiB'],['indexer.k_proj','2560×128','BF16','0.6 MiB'],['indexer.q/k_norm','128','F32','1 KiB']]}},
+  {t:'int8 KV stream',s:'32,768 / 262,144 cells',c:C.gpu,d:{title:'KV cache tier',sub:'int8 · streaming from pinned RAM',desc:'Each query reads only its selected cells; the resident set is 32,768 of 262,144 per layer.',
+   flow:['in: selected KV ids','resident cells from VRAM (98.9–99.6%)','the rest copied from 3.09 GiB pinned RAM','out: int8 K/V values'],
+   kv:[['cells/layer','32,768 resident of 262,144'],['format','int8 (--kv int8)'],['RAM','3.09 GiB pinned'],['hit rate','99%+ of block reads']]}},
+  {t:'Attention',s:'24 heads · 256 wide',c:C.attn,d:{title:'Gated attention',sub:'partial RoPE 64/256 · compress ×4',desc:'Scaled dot-product attention over the selected KV, with a gate on the output.',
+   flow:['in: queries + selected K/V','RoPE on 64 of 256 dims (base 1e7), softmax, weighted sum','× gate → 24 × 256','out: 6144'],
+   tensors:[['attn_output','6144×2560','Q8_0','15.9 MiB']]}},
+  {t:'HC write',s:'→ streams',c:C.hc,d:{title:'Hyper-connection write',sub:'mixer out',desc:'Folds the attention result back into the 4 streams.',flow:['in: 6144 → 2560','out: 4 streams']}},
+  {t:'Router',s:'512 logits',c:C.moe,d:{title:'MoE router',sub:'top-10 of 512',desc:'Same router as the GDN blocks.',flow:['in: hidden','out: 10 ids + weights'],tensors:[['ffn_gate_inp','2560×512','F32','5 MiB']]}},
+  {t:'Expert bank',s:'10 of 512',c:C.moe,d:{title:'Routed experts',sub:'512 × 2560→640→2560',desc:'The same expert bank as in GDN blocks: gate/up Q4_K, down Q5_1 (or Q8_0 where UD upgraded).',
+   flow:['10 experts per token per layer','GPU cache → CPU pool → PCIe → SSD'],tensors:[['ffn_gate/up_exps','2560×640×512','Q4_K','2×450 MiB'],['ffn_down_exps','640×2560×512','Q5_1','600 MiB']]}},
+  {t:'Shared expert',s:'always on',c:C.moe,d:{title:'Shared expert',sub:'one per block',desc:'Runs beside the routed experts.',flow:['in: hidden','out: added to the routed sum']}},
+  {t:'HC write 2',s:'→ next block',c:C.hc,d:{title:'Second HC write',sub:'→ block i+1',desc:'Hands the 4 streams to the next block.',flow:['in: MoE result','out: 4 streams']}}]},
+ mtp:{title:'MTP draft layer (blk.48) — exploded',units:[
+  {t:'Inputs',s:'hidden + last embedding',c:C.mtp,d:{title:'Draft inputs',sub:'verified hidden state + token embedding',desc:'The draft layer sees the verified hidden state and the embedding of the token just accepted.',flow:['in: 2 × 2560','out: normalized halves']}},
+  {t:'enorm / hnorm',s:'2560 / 10240',c:C.norm,d:{title:'Draft normalisations',sub:'two RMS norms',desc:'Normalises each half before fusion.',flow:['in: hidden, embedding','out: scaled inputs'],tensors:[['nextn.enorm','2560','F32','10 KiB'],['nextn.hnorm','10240','F32','40 KiB']]}},
+  {t:'eh_proj',s:'5120 → 2560',c:C.mtp,d:{title:'Embedding-hidden projection',sub:'concat 5120 → 2560',desc:'Fuses the two halves into one 2560 vector for the block.',flow:['in: concat(hidden, emb) = 5120','out: 2560'],tensors:[['nextn.eh_proj','5120×2560','Q8_0','13.3 MiB']]}},
+  {t:'Attention block',s:'q/k/v + indexer',c:C.attn,d:{title:'Draft attention block',sub:'one full-attention block',desc:'The same attention structure as a full-attention layer, with its own indexer.',flow:['in: 2560','q 12288 · k/v 512 · indexer','out: 2560'],tensors:[['blk.48.attn_q','2560×12288','Q8_0','32 MiB'],['blk.48.attn_k/v','2560×512','Q8_0','2×1.3 MiB']]}},
+  {t:'MoE (all Q8_0)',s:'512 experts',c:C.moe,d:{title:'Draft MoE',sub:'512 experts · 675 MiB of VRAM',desc:'A full 512-expert MoE. The GGUF stores it at Q8_0 (2,550 MiB); the rt pack repacks each expert into a 1.32 MiB blob, so all 512 fit in 675 MiB of VRAM.',flow:['in: 2560','top-10 of 512 + shared expert','out: 2560'],tensors:[['blk.48.ffn_gate/up_exps','2560×640×512','Q8_0','2×850 MiB (GGUF)'],['blk.48.ffn_down_exps','640×2560×512','Q8_0','850 MiB (GGUF)'],['mtp/rt/experts.bin','512 blobs','4.5 bpw','675 MiB (loaded)']]}},
+  {t:'hc_head',s:'→ 2560',c:C.hc,d:{title:'Final hyper-connection',sub:'4 streams → 2560',desc:'Collapses the draft block’s streams for the output head.',flow:['in: 4 streams','out: 2560'],tensors:[['nextn.hc_head_up/down','320×10240','Q8_0','6.6 MiB']]}},
+  {t:'Draft head',s:'106,299 ids',c:C.mtp,d:{title:'Draft vocabulary head',sub:'275.7 MiB',desc:'Logits only over the 106,299-token draft subset (English/code + all CJK), much cheaper than the full 248,320 head.',flow:['in: 2560','out: logits over 106,299 ids'],tensors:[['draft_vocab.bin','106,299 ids','—','275.7 MiB head']]}},
+  {t:'Sample ≤4',s:'p ≥ 0.5',c:C.mtp,d:{title:'Draft sampling',sub:'--spec 4 · --spec-min-p 0.5',desc:'Picks up to 4 candidate tokens, stopping as soon as confidence falls below the threshold.',flow:['in: draft logits','argmax/sample, chain up to 4','out: 0–4 candidate ids'],log:['strata serve: drafts accepted 92 of 113 (81%)']}},
+  {t:'Verify window',s:'≤6 tokens · one pass',c:C.attn,d:{title:'Verification',sub:'the whole window through 48 blocks',desc:'The full model scores every draft + the last accepted token in one pass; only the longest accepted prefix is kept.',flow:['in: drafts + last token','48 blocks, 480 expert lookups per token','compare logits → accept/reject','out: accepted tokens → the client'],links:[['← MTP','0–4 draft ids from blk.48'],['→ stream out','the accepted prefix is final'],['↔ KV','the window’s KV is written once and reused']],log:['drafts accepted 1562 of 1848 → ~2.4–3.2 tokens per window']}}]},
+ vit:{title:'ViT block (mmproj) — exploded',units:[
+  {t:'Patch embed',s:'16×16 · 2 convs',c:C.mm,d:{title:'Patch embedding',sub:'768² → 2,304 × 1152',desc:'Two convolutions turn each 16×16 RGB patch into a 1152-wide row.',flow:['in: 768×768 image','16×16 patches, conv ×2','out: 2,304 rows'],tensors:[['v.patch_embd.weight(.1)','16×16×3×1152','F16','2×1.7 MiB'],['v.patch_embd.bias','1152','F32','4.5 KiB']]}},
+  {t:'Position embd',s:'1152 × 2304',c:C.mm,d:{title:'Position embeddings',sub:'learned, 2304 positions',desc:'Adds where each patch sits in the image.',flow:['in: patch rows','+ position table','out: positioned rows'],tensors:[['v.position_embd','1152×2304','F32','10.1 MiB']]}},
+  {t:'LN1',s:'1152',c:C.norm,d:{title:'LayerNorm 1',sub:'pre-attention',desc:'Pre-attention normalisation (eps 1e-6).',flow:['in: rows','out: normalized rows'],tensors:[['v.blk.N.ln1','1152','F32','4.5 KiB']]}},
+  {t:'QKV',s:'1152 → 3456',c:C.mm,d:{title:'QKV projection',sub:'16 heads × 72? — 3×1152',desc:'Fused query/key/value projection for 16 heads.',flow:['in: 1152','out: 3456 (q,k,v)'],tensors:[['v.blk.N.attn_qkv','1152×3456','F16','7.6 MiB']]}},
+  {t:'Attention',s:'16 heads',c:C.mm,d:{title:'ViT attention',sub:'16 heads, full',desc:'Full attention over the 2,304 patch tokens.',flow:['in: q,k,v','out: 1152']}},
+  {t:'attn_out',s:'1152 → 1152',c:C.mm,d:{title:'Attention output',sub:'+ residual',desc:'Projects attention back and adds the residual.',flow:['in: 1152','out: 1152 + residual'],tensors:[['v.blk.N.attn_out','1152×1152','F16','2.5 MiB']]}},
+  {t:'LN2',s:'1152',c:C.norm,d:{title:'LayerNorm 2',sub:'pre-FFN',desc:'Normalisation before the FFN.',flow:['in: rows','out: normalized rows'],tensors:[['v.blk.N.ln2','1152','F32','4.5 KiB']]}},
+  {t:'FFN up',s:'1152 → 4304',c:C.mm,d:{title:'FFN expansion',sub:'GELU',desc:'Widens to 4304 with a GELU activation.',flow:['in: 1152','out: 4304'],tensors:[['v.blk.N.ffn_up','1152×4304','F16','9.5 MiB']]}},
+  {t:'FFN down',s:'4304 → 1152',c:C.mm,d:{title:'FFN contraction',sub:'+ residual',desc:'Back to 1152 and adds the residual.',flow:['in: 4304','out: 1152'],tensors:[['v.blk.N.ffn_down','4304×1152','F16','9.5 MiB']]}},
+  {t:'×27 blocks',s:'→ post_ln',c:C.mm,d:{title:'27 ViT blocks',sub:'449M parameters total',desc:'The block repeats 27 times (block count from the GGUF), then post_ln.',flow:['in: positioned rows','27× (LN→attn→LN→FFN)','post_ln','out: 2,304 × 1152']}},
+  {t:'Merger mm.0',s:'4608 → 4608',c:C.mm,d:{title:'Merger first layer',sub:'2×2 patches fused',desc:'Each 2×2 group (4×1152 = 4608) is projected.',flow:['in: 576 × 4608','out: 576 × 4608'],tensors:[['mm.0','4608×4608','F16','40.5 MiB']]}},
+  {t:'Merger mm.2',s:'4608 → 2560',c:C.mm,d:{title:'Merger second layer',sub:'to the model width',desc:'Projects to 2560 — the width of the text model’s embeddings.',flow:['in: 576 × 4608','out: 576 × 2560 rows → the prompt'],tensors:[['mm.2','4608×2560','F16','22.5 MiB']]}}]},
+ merger:{title:'Patch embed + merger — exploded',units:[
+  {t:'Image 768²',s:'RGB · mean/std 0.5',c:C.mm,d:{title:'Image input',sub:'768×768',desc:'The encoder’s fixed input grid.',flow:['in: any image','resize/crop to 768²','out: RGB tensor']}},
+  {t:'16×16 patches',s:'48 × 48 = 2,304',c:C.mm,d:{title:'Patchification',sub:'2,304 tokens',desc:'Cuts and embeds the image into 2,304 patch tokens.',flow:['in: 768²','out: 2,304 × 1152'],tensors:[['v.patch_embd','16×16×3×1152','F16','2×1.7 MiB']]}},
+  {t:'2×2 merge',s:'4 × 1152 = 4608',c:C.mm,d:{title:'Spatial merge',sub:'scale 2',desc:'Groups 2×2 patches — 576 rows per image.',flow:['in: 2,304 rows','out: 576 × 4608']}},
+  {t:'mm.0',s:'4608 → 4608',c:C.mm,d:{title:'Merger MLP 1',sub:'+ bias',desc:'First merger projection.',flow:['in: 4608','out: 4608'],tensors:[['mm.0','4608×4608','F16','40.5 MiB']]}},
+  {t:'mm.2',s:'4608 → 2560',c:C.mm,d:{title:'Merger MLP 2',sub:'+ bias',desc:'To the text model’s width.',flow:['in: 4608','out: 2560'],tensors:[['mm.2','4608×2560','F16','22.5 MiB']]}},
+  {t:'576 rows @ 2560',s:'→ prompt',c:C.emb,d:{title:'Into the prompt',sub:'image placeholders',desc:'The rows replace the image placeholders in the token stream, with 2-D M-RoPE positions.',flow:['in: 576 × 2560','out: embedding rows in the prompt at the placeholder positions'],
+   links:[['→ block 0','the rows enter the text model exactly like word embeddings'],['↔ server','the engine receives them through “ENC”/image paths']]}}]}};
+let anatUnit='gdn';
+function buildAnatomy(){
+  const A=ANAT[anatUnit], U=A.units, n=U.length;
+  const cols=n<=6?3:(n<=12?4:5), rows=Math.ceil(n/cols);
+  const W=185,H=50,D=56,stepX=250,stepY=175;
+  const y0=-(rows-1)*stepY/2;
+  A.units.forEach((u,i)=>{
+    const row=Math.floor(i/cols), j=i%cols;
+    const x=((row%2?cols-1-j:j)-(cols-1)/2)*stepX, y=y0+row*stepY;
+    const prev=U[i-1], next=U[i+1];
+    const links=u.d.links||[['← in',prev?prev.t:'the block input'],['→ out',next?next.t:'the next block'],
+      ['⚙ owner','engine/strata · weights from the native pack'+(anatUnit==='vit'||anatUnit==='merger'?' / mmproj file':anatUnit==='mtp'?' / MTP pack':'')]];
+    block({w:W,h:H,d:D,x,y,z:0,c:u.c,label:u.t,sub:u.s,
+      open:()=>openPanel({tag:'unit',c:u.c,title:u.d.title,sub:u.d.sub,desc:u.d.desc,flow:u.d.flow,
+        kv:u.d.kv,tensors:u.d.tensors,links:links,log:u.d.log,
+        owner:u.d.owner||'engine/strata (CUDA) · weights from the native pack / MTP pack / mmproj file'})});
+    if(next&&i<U.length-1){
+      if(Math.floor((i+1)/cols)===row){
+        const sgn=(row%2?-1:1), nx=((row%2?cols-1-(j+1):(j+1))-(cols-1)/2)*stepX;
+        conn(x+sgn*(W/2+3),y,nx-sgn*(W/2+3),y,-D/2-14,'#14b8a6cc');
+      } else {
+        const ny=y0+(row+1)*stepY;
+        conn(x,y+H/2+3,x,ny-H/2-3,-D/2-14,'#14b8a6cc');
+      }
+    }
+  });
+  legend([[C.hc,'hyper-connection'],[C.norm,'norm'],[C.gdn,'GDN'],[C.attn,'attention/KV'],[C.moe,'MoE'],
+          [C.mtp,'MTP/draft'],[C.mm,'vision'],[C.emb,'embedding space']]);
+  document.querySelectorAll('#anatbar .abtn').forEach(b=>b.classList.toggle('on',b.dataset.u===anatUnit));
+}
+function explodeUnit(u){anatUnit=u;setView('anatomy');}
+// ================= STRATA STACK =================
+const STACK=[
+ {t:'Your apps',c:'#64748b',sub:'OpenAI SDK · Anthropic client · curl · MCP clients',d:{
+  owner:'anything on this PC that calls http://127.0.0.1:8081/v1 (localhost unless an API key is set)',
+  desc:'Every client talks HTTP+JSON (or SSE) to the server. The wire formats are OpenAI-compatible and Anthropic-compatible, so existing apps and SDKs work unchanged.',
+  flow:['client sends POST /v1/chat/completions (messages, sampling params, optional image)',
+        'server answers as an SSE stream of delta chunks, ending with usage + [DONE]',
+        'on tool calls, the server runs the MCP tool and sends a second request'],
+  kv:[['OpenAI','POST /v1/chat/completions · /v1/responses (stream + non-stream)'],
+      ['Anthropic','POST /v1/messages'],
+      ['discovery','GET /v1/models · /v1/status · /health · /metrics'],
+      ['auth','API key required before any non-localhost bind']],
+  links:[['→ web app','the same HTTP server also serves the Chat/Monitor/About UI'],
+         ['→ HTTP API','/v1/* is the only entry point into the stack'],
+         ['↔ MCP','clients that speak MCP (tools) are handled inside the server, not here']]}},
+ {t:'Web app (127.0.0.1:8081)',c:'#0ea5e9',sub:'Chat · Monitor · About — served by serve/server.py',d:{
+  owner:'serve/server.py → serve/web (static HTML/CSS/JS) + GET /metrics',
+  desc:'The bundled UI: <b>Chat</b> (streaming, folded thinking, images, sampling controls), <b>Monitor</b> (GPU/VRAM/PCIe/CPU, context in use, the last requests, tier hit rates), <b>About</b> (settings + addresses for other apps). Chats stay in the browser; only the last 500 request summaries are kept in server memory for the Monitor.',
+  flow:['Chat tab → POST /v1/chat/completions (SSE) → deltas painted as they arrive',
+        'Monitor tab polls GET /metrics → engine facts + history + totals',
+        'About tab shows the config (engine args, model, context)'],
+  links:[['← HTTP API','the page is served and backed by the same process'],
+         ['→ engine','only indirectly: the server forwards to the engine pipe'],
+         ['↔ model','no direct access — all traffic is HTTP']]}},
+ {t:'HTTP server — serve/server.py',c:'#475569',sub:'Python · FIFO queue · ChatML template · prompt cache · MCP tools',d:{
+  owner:'a Python process next to the engine; it owns the stdin/stdout pipe and the vision encoder process',
+  desc:'The orchestration layer. It applies the model’s ChatML template, keeps a FIFO (one resident sequence), forwards token ids to the engine over stdin, reads the engine’s control lines, streams deltas back, and manages the caches and tool calls.',
+  flow:['HTTP JSON → validate → apply the chat template (messages → one text)',
+        'tokenize? no — the engine tokenizes; the server sends ids it already has for cached prefixes',
+        'write “GEN &lt;max_new&gt; &lt;sampling keys&gt; &lt;id,id,…&gt;” to the engine’s stdin',
+        'read “PP &lt;n&gt;” (prompt progress), “T &lt;id&gt;” (each token), “DONE …” (timings + tier stats)',
+        'detokenize + stream SSE deltas; on cancel write “STOP”',
+        'control: “VRAM”, “SAVE/RESTORE &lt;path&gt;”, “QUIT”, and “ENC &lt;img&gt; &lt;out&gt;” to the vision process'],
+  kv:[['template','Jinja ChatML with image/video counting (stored in the GGUF)'],
+      ['queue','one sequence at a time behind a FIFO'],
+      ['prompt cache','repeated conversations resume; only the tail is read (96-slot ring)'],
+      ['structured output','json_object / json_schema with server-side validation'],
+      ['tools','the model can call your MCP servers (serve/mcp.py)'],
+      ['engine pipe','plain text lines on stdin/stdout, one request at a time']],
+  links:[['← apps','HTTP/SSE'],
+         ['→ engine','GEN/STOP/QUIT lines in, PP/T/DONE lines out'],
+         ['→ vision','ENC &lt;image&gt; &lt;out&gt; when a request carries an image'],
+         ['↔ caches','prompt/conversation cache lives in the engine; the server only decides what to reuse'],
+         ['↔ metrics','GET /metrics aggregates the engine’s last request + a 500-entry history']],
+  log:['strata serve: prompt 39053 tokens = 37476 reused + 1577 read in 2415 ms (653.1 tok/s), 2633 generated in 51248 ms (51.4 tok/s), drafts accepted 1562 of 1848, 9 checkpoints']}},
+ {t:'Vision path — mtmd + mmproj-F16',c:C.mm,sub:'449M ViT · 27 blocks · merger to 2560',d:{
+  owner:'a separate encoder process (llama.cpp mtmd) started by the server when images are enabled',
+  desc:'Images never enter the text model as pixels: the encoder turns them into embedding rows and hands them back. The server records which positions the rows replace.',
+  flow:['server writes “ENC &lt;image&gt; &lt;out&gt;” to the encoder',
+        'patch embed 16×16 → 27 ViT blocks (1152 wide) → 2×2 merge → mm.0/mm.2 → 2560',
+        'encoder writes 576 rows per 768² image back',
+        'engine splices them at the image placeholders, with 2-D M-RoPE positions',
+        'the text model then processes them like word embeddings'],
+  kv:[['file','mmproj-F16.gguf · 904 MB · 334 tensors'],['grid','768² · patch 16 · 27 blocks · 16 heads'],
+      ['shape','2,304 patch rows → 576 merged rows × 2560'],['token id','248,056'],
+      ['when','only when the request has an image (vision on)']],
+  links:[['← server','ENC command + the image path'],
+         ['→ engine','rows + their positions enter the prompt'],
+         ['↔ tokenizer','the chat template counts images so the placeholder count matches'],
+         ['↔ VRAM','the encoder runs beside the engine and takes its own VRAM share']]}},
+ {t:'Native engine — engine/strata (0.1.40.3)',c:'#b91c1c',sub:'C++/CUDA · prefill · verify windows · router + expert pool · KV · MTP · sampler',d:{
+  owner:'one native process (CUDA or HIP); owns VRAM, the pinned RAM copy and the expert tier exchange',
+  desc:'The whole forward pass, and the only process that touches weights. It reads the native pack (dense projections + tokenizer), maps the GGUF experts in place, pre-fills the expert cache from the profile, and answers requests from the server’s stdin pipe.',
+  flow:['“GEN …” arrives → tokenizer already applied to the prefix → prompt cache lookup',
+        'prefill in ≤8,192-token chunks: embed → 48 blocks → KV written (int8)',
+        'first token → sampler → “T id” to the server',
+        'decode: MTP drafts ≤4 → verify window ≤6 through all 48 blocks',
+        'per layer, per token: router → top-10 of 512 experts → GPU cache / CPU pool / PCIe / SSD',
+        'result line “DONE …” with timings, draft acceptance and tier statistics'],
+  kv:[['engine version','0.1.40.3 (session line in the log)'],
+      ['prefill','chunks ≤ 8,192 · 96-slot ring · borrows 1,275 cache slots (3.73 GiB)'],
+      ['decode','verify windows ≤ 6 tokens · 96.1 MiB buffers'],
+      ['CPU','AVX2 kernels (this CPU has no AVX-512) · 23 pool workers + host thread · 72 tasks/phase'],
+      ['KV','int8 · 32,768 of 262,144 cells resident per QSA layer · 3.09 GiB pinned RAM'],
+      ['sampler','top_k 20 · top_p 0.95 · temp 1.0 · MTP drafts p ≥ 0.5']],
+  links:[['← server','GEN / STOP / VRAM / SAVE / RESTORE / QUIT'],
+         ['→ server','PP / T / DONE / ERR'],
+         ['↔ tiers','VRAM expert cache ↔ pinned RAM ↔ GGUF files (adaptive swaps)'],
+         ['↔ vision','receives embedding rows for image tokens'],
+         ['↔ pack','dense.bin (301 projections), native_experts.txt, tokenizer from the pack'],
+         ['⚙ kernels',' every kernel this process runs — language, launch geometry, parity test — is in the Kernel stack tab']],
+  log:['strata generate: session is up (engine 0.1.40.3)',
+       'strata serve: prompt chunk auto: 8192 tokens, a 96-slot ring',
+       'strata serve: the prompt path borrows 1275 CUDA0 cache slots (3.73 GiB)']}},
+ {t:'Memory tiers — where the 24,576 experts live',c:'#0369a1',sub:'VRAM cache ↔ PCIe 38 GB/s ↔ pinned RAM ↔ SSD',d:{
+  owner:'the engine (CUDA allocator + FileExpertSource + pinned RAM budget)',
+  desc:'The GPU holds what every token needs (mixers, routers, shared experts, head, draft layer, KV) plus an expert cache; RAM holds the rest page-locked; the SSD holds the GGUF files and the PLE table. Adaptive swaps trade experts as the conversation drifts.',
+  flow:['router picks 10 experts → lookup in the VRAM cache (49–86% hit)',
+        'miss → either the CPU computes it from pinned RAM (23 workers)',
+        'or the GPU copies it over PCIe and computes it there (55% share)',
+        'coldest → read from the GGUF on the SSD (0 in steady state)',
+        'adaptive swap: the evicted expert is copied back into the GPU cache slot, the new one in'],
+  kv:[['VRAM cache','5,261 slots · 15.34 GiB · profile-ranked, no eviction'],
+      ['pinned RAM','56.38 GiB = 19,315 experts · built in 30 s'],
+      ['SSD','4 GGUF shards read in place (no experts.bin) + 28.8 GB PLE table'],
+      ['PCIe','38.0 GB/s measured H2D → 55% of cache misses computed on the GPU'],
+      ['KV','int8 · 32,768 resident cells/layer · 99%+ VRAM hits']],
+  links:[['↔ engine','the engine owns every tier and moves the bytes'],
+         ['↔ VRAM','mixers, routers, shared experts, head, draft, KV, cache'],
+         ['↔ RAM','pinned expert complement, KV overflow, prompt buffers'],
+         ['↔ SSD','GGUF in place, PLE rows, start-up reads']],
+  log:['strata generate: resident RAM mode: 56.38 GiB of experts in RAM (page-locked), 5261 in the GPU cache; adaptive swaps exchange them with the GPU cache (no file reads)',
+       'strata serve: expert tiers: GPU 1051319 hits this request; since the start RAM 1207973 blobs, files 7780 blobs 67964.1 MB read (the GGUF in place)']}},
+ {t:'Files on disk',c:'#334155',sub:'GGUF shards · mmproj · MTP · pack · profile',d:{
+  owner:'the engine maps/reads them; the pack is written once by tools/iq_pack.py (setup)',
+  desc:'Everything the engine maps or reads at start and during requests.',
+  tensors:[['UD-Q4_K_XL-00001..4.gguf','4 shards','111.3 GB','metadata + 1,224 tensors'],
+   ['mmproj-F16.gguf','334 tensors','904 MB','vision encoder + merger'],
+   ['MTP/mtp-…-Q8_0.gguf','34 tensors','4.14 GB','draft layer (+2.79 GB shared variant)'],
+   ['packs/unsloth-ud-q4_k_xl','1.4 GB','—','dense.bin (301 projections, 2,975 MiB), native_experts.txt, tokenizer'],
+   ['mtp/rt','787 MB','—','draft experts.bin + dense.bin + draft_vocab.bin (106,299 ids)'],
+   ['data/expert-profile.bin','196 KB','—','24,576 ranked (layer, expert) pairs']],
+  flow:['start: read metadata from shard 1 → find shards 2–4',
+        'pack: 301 dense projections (2,975 MiB) + tokenizer into VRAM/host',
+        'GGUF: token_embd (644 MiB) mapped; experts read in place',
+        'profile: rank the 24,576 pairs → fill 5,261 VRAM slots + 19,315 RAM slots',
+        'PLE table (28.8 GB in shard 2) read row-by-row during requests'],
+  links:[['→ engine','mapped and read in place'],
+         ['↔ pack','dense weights + expert index + tokenizer'],
+         ['↔ profile','expert ranking for the VRAM cache and the RAM budget'],
+         ['↔ MTP','draft experts/dense + the 106,299-id vocabulary']],
+  log:['strata generate: profile ~/Strata/data/expert-profile.bin: 24576 ranked pairs, built for 24576 slots']}}];
+function buildStack(){
+  const W=560,H=52,D=110,step=132,y0=-330;
+  STACK.forEach((s,i)=>{
+    const y=y0+i*step;
+    block({w:W,h:H,d:D,x:0,y,z:0,c:s.c,label:s.t.toUpperCase(),sub:s.sub,
+      open:()=>openPanel({tag:'stack',c:s.c,title:s.t,sub:s.sub,...s.d})});
+    if(i<STACK.length-1)conn(0,y+H/2+6,0,y+step-H/2-6,0,'#ffffff44');
+  });
+  const mx=640;
+  const tiers=[
+    {t:'VRAM (GPU)',c:C.gpu,y:-70,sub:'cache 5,261 experts · KV · draft',d:{title:'GPU (VRAM)',desc:'Mixers, routers, shared experts, head, MTP draft, KV resident cells and the expert cache. The log shows 159–177 MiB free with a window captured — flagged LOW.',flow:['router hit → compute here (49–86% of lookups)','KV reads served from 32,768 resident cells','adaptive swap in: expert copied from RAM'],kv:[['expert cache','5,261 slots · 15.34 GiB'],['draft layer','835 MiB'],['KV resident','32,768 cells per QSA layer'],['hit rate','49–86% of routed lookups']],links:[['↔ PCIe','misses copied in, evicted blobs copied out'],['↔ RAM','swap partner for the expert cache'],['↔ engine','CUDA kernels read every weight here']]}},
+    {t:'pinned RAM',c:C.ram,y:70,sub:'56.38 GiB · 19,315 experts',d:{title:'RAM (page-locked)',desc:'Every expert the GPU cache does not hold, copied at start in 30 s and page-locked so the CPU can compute them in place.',flow:['expert cache miss → this expert is here','CPU pool (23 workers) computes it while the GPU works','result returned to the attention/FFN context'],kv:[['budget','56.38 GiB of a ~71 GiB expert set'],['built','48/48 layers in 18 s + map = 30 s'],['exchange','adaptive swaps, 0 file reads in steady use']],links:[['↔ VRAM','expert swaps both ways'],['↔ engine','CPU expert kernels (AVX2)'],['↔ SSD','only when an expert is outside the budget']]}},
+    {t:'SSD (NVMe)',c:C.ssd,y:210,sub:'GGUF in place · PLE 28.8 GB',d:{title:'SSD',desc:'The four GGUF shards are read in place through the OS file cache (no experts.bin copy); the PLE n-gram table is read unbuffered. The drive is kept awake while rows are read.',flow:['cold expert → read the blob from the shard (a few MB)','PLE → a few 160-wide IQ4_NL rows per token, direct I/O','nothing once the working set is warm'],kv:[['startup read','16.5 GB of experts through the file cache'],['keep-alive','one page after 100 ms idle, until 60 s after the last request'],['PLE','few rows per token, direct I/O']],links:[['→ RAM/VRAM','blob reads on a cold cache'],['↔ PLE','row reads during prefill/decode'],['↔ setup','the pack and the profile are built from these files']]}}];
+  tiers.forEach(t=>block({w:210,h:44,d:90,x:mx,y:t.y,z:0,c:t.c,label:t.t,sub:t.sub,
+    open:()=>openPanel({tag:'tier',c:t.c,...t.d})}));
+  conn(mx,-48,mx,11,0,'#ffffff44'); conn(mx,11,mx,48,0,'#ffffff44'); conn(mx,92,mx,188,0,'#ffffff44');
+  block({w:200,h:20,d:12,x:mx,y:0,z:0,c:'#1e293b',label:'PCIe 38.0 GB/s · 55%',sub:'',open:()=>openPanel({tag:'link',c:'#1e293b',
+    title:'PCIe link — VRAM ↔ pinned RAM',sub:'38.0 GB/s measured · 55% of cache misses copied',
+    owner:'the engine moves blobs; the driver does the DMA',
+    desc:'The bus between the expert cache in VRAM and the pinned RAM copy. Measured 38.0 GB/s host→device on the reference PC; the engine copies an expert over it instead of computing it on the CPU when the copy is the cheaper branch.',
+    flow:['router miss → the expert blob is in pinned RAM','either the CPU pool computes it there, or the GPU copies it over PCIe','copy: ≈1.3–3.4 MiB per expert at 38.0 GB/s → tens of µs','the GPU computes it while the next layers run'],
+    kv:[['bandwidth','38.0 GB/s measured (H2D)'],['policy','pcie_frac 0.55 → 55% of misses copied, 45% computed on the CPU'],['example','34,077 experts copied in one request (2.4% of 1,401,120 routed)'],['KV path','int8 KV for un-resident cells streams the same way (701.7 MiB in one request)']],
+    links:[['↔ VRAM cache','misses copied in, evicted blobs copied out'],['↔ pinned RAM','the expert store on the other end'],['↔ CPU pool','the alternative branch: compute in place with 23 workers']]})});
+  legend([[STACK[0].c,'apps'],[STACK[2].c,'HTTP server'],[STACK[4].c,'native engine'],[C.gpu,'VRAM'],[C.ram,'pinned RAM'],[C.ssd,'SSD']]);
+}
+// ================= PROMPT → TOKEN → OUTPUT FLOW =================
+const FLOW=[
+ {t:'1 · Request in',c:C.api,short:'web app / OpenAI / Anthropic',
+  desc:'A chat request arrives at the Python server (the web app, /v1/chat/completions or /v1/messages). Requests run one sequence at a time behind a FIFO.',
+  flow:['in: HTTP POST with messages[], sampling params, optional image parts',
+        'auth check (API key only if bound beyond localhost)',
+        'queued behind the FIFO: one resident sequence',
+        'out: a validated request object for the template stage'],
+  links:[['← your apps','OpenAI SDK, Anthropic SDK, curl, MCP clients'],
+         ['→ HTTP server','the only entry point; no client touches weights directly'],
+         ['↔ web app','the Chat tab is one more client of the same endpoint']],
+  log:['serve/server.py: one sequence at a time behind a FIFO (plan: one resident sequence)']},
+ {t:'2 · Chat template',c:C.api,short:'ChatML + image counting',
+  desc:'The Jinja ChatML template flattens the messages into one text: system/user/assistant turns, thinking switches, and one placeholder per image.',
+  flow:['in: messages[] + tools[] + image parts',
+        'apply tokenizer.chat_template (stored in the GGUF)',
+        'count image placeholders per image (mmproj rows later fill them)',
+        'out: one flat text string'],
+  links:[['← HTTP server','template + tokenizer config read from the pack/GGUF'],
+         ['→ tokenizer','plain text, ready for BPE'],
+         ['↔ vision','the number of <|image_pad|> tokens must match the 576 rows the encoder returns']],
+  note:'The template is stored in the GGUF (tokenizer.chat_template) and in the pack.'},
+ {t:'3 · Tokenize',c:C.blue,short:'BPE · vocab 248,320',
+  desc:'The pack tokenizer (BPE, qwen35 pre-tokenizer) turns the text into ids. Special ids: BOS/EOS 248,044/248,046, image 248,056.',
+  ex:'"Explain MoE routing in one line." → [12872, 31681, 90522, 264, 13474, 304, 1522, 6021, 13] …',
+  flow:['in: flat ChatML text',
+        'BPE merges (vocab 248,320) → token ids',
+        'special tokens kept: BOS/EOS/image/thinking markers',
+        'out: an id array (new tail + a reusable prefix)'],
+  links:[['← template','text'],
+         ['→ prompt cache','ids are compared with the conversation history before the engine sees them'],
+         ['↔ embedding','each id addresses one 2560-wide row (and PLE n-gram ids at block 1)']],
+  log:['strata serve: prompt 34 tokens = 0 reused + 34 read in 706 ms (48.2 tok/s)']},
+ {t:'4 · Prompt cache',c:C.blue,short:'reuse the conversation, read the tail',
+  desc:'A repeated conversation resumes from the cached KV; only the new tail goes through prefill. The engine keeps a 96-slot ring of prompt checkpoints.',
+  flow:['in: the new id array',
+        'longest-prefix match against cached checkpoints (96-slot ring)',
+        'reused prefix → its KV stays; the new tail is prefilled',
+        'out: “GEN &lt;max_new&gt; &lt;keys&gt; &lt;ids…&gt;” to the engine, with ckpt/pin hints'],
+  links:[['← tokenizer','ids'],
+         ['→ engine','the GEN line; the engine answers PP/T/DONE'],
+         ['↔ KV tier','reused tokens skip prefill, so their KV is never recomputed']],
+  log:['strata serve: prompt 39053 tokens = 37476 reused + 1577 read in 2415 ms (653.1 tok/s)']},
+ {t:'5 · Embed + PLE',c:C.ple,short:'Q8_0 rows + n-gram rows from SSD',
+  desc:'Each id takes its 2560-wide row from token_embd (mapped RAM); block 1 adds PLE n-gram rows read from the 28.8 GB IQ4_NL table; image rows from mmproj land at the <|image_pad|> positions.',
+  flow:['in: token ids (+ image rows already encoded)',
+        'token_embd lookup: id → 2560 Q8_0 values from mapped host memory',
+        'block 1: 3-gram hash → a few PLE rows read from the SSD',
+        'images: 576 × 2560 rows spliced at the placeholders',
+        'out: the first 4-stream hyper-connection input'],
+  links:[['← tokenizer','ids'],
+         ['← vision','embedding rows for image positions'],
+         ['→ block 0','the embedding signal enters the 48-block tower'],
+         ['↔ SSD','PLE rows are read on demand, never copied into RAM/VRAM']],
+  log:['strata generate: PLE on, table 320001536 rows of ~/models/Qwen3.8-Flash-Next-GGUF/UD-Q4_K_XL/…-00002-of-00004.gguf']},
+ {t:'6 · Prefill (48 layers)',c:C.violet,short:'chunks ≤ 8,192 tokens · experts over PCIe',
+  desc:'The prompt runs through all 48 layers in big chunks. Per layer: GDN state updates or QSA attention, then the router sends each token to 10 of 512 experts — cached experts on the GPU, the rest streamed over PCIe (38 GB/s) while attention runs. int8 KV is written (32,768 cells/layer resident, the rest in pinned RAM).',
+  flow:['in: ≤8,192-token chunk, 4 residual streams',
+        '36× GDN block: fixed state update, no KV growth',
+        '12× full attention: indexer picks top-2048, int8 KV written',
+        'per block: router → 10 of 512 experts (GPU cache / CPU pool / PCIe) + shared expert',
+        'out: hidden state for the last position + KV/state for the whole chunk'],
+  links:[['← embedding','rows + PLE injection at block 1'],
+         ['→ output head','the last position’s hidden state'],
+         ['↔ memory tiers','expert lookups dominate DRAM/PCIe traffic in this phase'],
+         ['↔ prompt cache','the prefill result is itself a checkpoint for the next turn']],
+  log:['strata serve: prompt 27313 tokens = 19089 reused + 8224 read in 5674 ms (1449.5 tok/s)',
+       'strata generate: prompt chunk auto: 8192 tokens, a 96-slot ring']},
+ {t:'7 · First token',c:C.head,short:'head → sampler',
+  desc:'The last hidden state × output.weight (248,320 logits, Q8_0) → the sampler (top_k 20, top_p 0.95, temp 1.0) picks the first answer token.',
+  flow:['in: hidden state of the last prompt token',
+        'final hyper-connection → one 2560 vector',
+        'output.weight → 248,320 logits',
+        'sampler: penalties → top_k 20 → top_p 0.95 → temperature',
+        'out: token id → “T &lt;id&gt;” to the server'],
+  links:[['← prefill','the last position'],
+         ['→ detokenizer / SSE','the first delta'],
+         ['↔ MTP','the draft layer starts proposing from here']],
+  note:'Time to first token ≈ prompt length ÷ prefill speed: ~4 s at 4K, ~25 s at 32K on the reference PC.'},
+ {t:'8 · MTP drafts ≤4',c:C.mtp,short:'draft_vocab 106,299 · p ≥ 0.5',
+  desc:'The draft layer (blk.48, 835 MiB VRAM) proposes up to 4 next tokens from its 106,299-id subset, stopping when confidence drops below --spec-min-p. A suffix/prompt-lookup drafter adds up to 5 more when the reply repeats the context.',
+  flow:['in: verified hidden state + last accepted embedding',
+        'enorm/hnorm → eh_proj (5120→2560) → one attention + MoE block',
+        'draft head over 106,299 ids → sample up to 4, stop at p < 0.5',
+        'out: candidate ids for the verify window'],
+  links:[['← first token / verify','the state to extend'],
+         ['→ verify window','drafts are checked, never trusted'],
+         ['↔ VRAM','the draft layer holds 835 MiB beside the expert cache']],
+  log:['strata serve: suffix drafts: 35 windows, 116 of 137 drafts accepted']},
+ {t:'9 · Verify window ≤6',c:C.attn,short:'one pass · 480 expert lookups/token',
+  desc:'The full model re-runs the whole window (drafts + last kept token) through all 48 layers in ONE pass. Per token per layer the router picks 10 of 512 experts: 49–86% hit the VRAM cache; misses are computed by 23 CPU workers from pinned RAM or copied to the GPU (55% share); the coldest come from the SSD. The longest accepted prefix is kept — the draft never changes the answer.',
+  flow:['in: ≤4 drafts + the last accepted token (window ≤6)',
+        'one forward pass of all 48 blocks over the whole window',
+        '480 routed lookups per token × the window → tier system',
+        'compare the model’s logits with each draft → longest accepted prefix',
+        'out: accepted token ids (rejected drafts are dropped)'],
+  links:[['← MTP','candidate ids'],
+         ['→ sampler / SSE','accepted tokens are final'],
+         ['↔ KV','the window’s KV is written once, then reused'],
+         ['↔ tiers','this loop is where the 49–86% cache hit rate is measured']],
+  log:['strata serve: decode expert cache hit rate: 76.9% (1051319 hits / 1367043 lookups); 34077 more read by the GPU over PCIe (2.4% of all 1401120 routed)',
+       'drafts accepted 1562 of 1848 → ~2.4–3.2 tokens per window']},
+ {t:'10 · Stream out',c:C.green,short:'detokenize → SSE → your app',
+  desc:'Accepted tokens are detokenized and streamed as SSE deltas; the Monitor tab shows tok/s, tier hit rates and KV traffic live.',
+  flow:['in: accepted token ids',
+        'detokenize (BPE decoder, partial UTF-8 held until complete)',
+        'SSE delta chunks → the client, then usage + [DONE]',
+        'out: the answer in your app'],
+  links:[['← verify','accepted ids'],
+         ['→ client','SSE bytes + usage'],
+         ['↔ Monitor','GET /metrics reports tok/s, hits, KV bytes for this request'],
+         ['↔ prompt cache','the final conversation becomes the next turn’s cached prefix']],
+  log:['strata serve: 128 generated in 4025 ms (31.8 tok/s), drafts accepted 92 of 113',
+       'strata serve: 2633 generated in 51248 ms (51.4 tok/s)']},
+];
+let fDot=null,fTimer=null,fIdx=-1;
+// ---- the one-glance stage table (every cell grounded in the run log) ----
+function infDetail(){openPanel({tag:'process',c:C.api,title:'The inference pass through Strata',
+ sub:'one request, stage by stage · where it runs · what it costs',
+ owner:'every “measured” cell is a verbatim line of strata-unsloth-ud-q4_k_xl.log (engine 0.1.40.3)',
+ desc:`A request enters the Python server, becomes ids, resumes from the cached prefix, goes once through the
+ 48-block tower, then loops: the MTP block drafts ≤4 tokens, the whole tower verifies them in one captured-graph
+ pass, and the accepted tokens stream out. Each row below is one block of this view.`,
+ table:{t:'Stage by stage',h:['#','stage','what happens','where it runs','measured (this log)'],
+  cls:['n','','','','num'],
+  r:[
+   ['1','request','POST /v1/chat/completions arrives; keys, params and image parts validated; queued','serve/ — Python','one sequence at a time behind a FIFO'],
+   ['2','template','ChatML template flattens the messages; image placeholders counted','serve/ (Jinja)','template stored in the GGUF'],
+   ['3','tokenize','BPE (pre “qwen35”) turns the text into ids','serve/ pack tokenizer','vocab 248,320'],
+   ['4','prompt cache','the longest cached prefix is reused; only the new tail is computed','engine + KV ring','155,618 of 157,088 ids reused · 96-slot ring'],
+   ['5','embed','ids read 2560-wide rows; block 1 adds PLE 3-gram rows','GPU rows · SSD table','PLE 320M rows · token_embd 644 MiB mapped'],
+   ['6','prefill','the tail goes through 48 blocks in ≤8,192-token chunks; 10 of 512 experts run per token per block','GPU + expert tiers + CPU pool','cold: 155,423 ids in 81.5 s = 1,906 tok/s · warm tail: 603 tok/s'],
+   ['7','first token','the head emits 248,320 logits; the sampler picks one','GPU','TTFT = prefill time of the tail'],
+   ['8','draft','blk.48 proposes ≤4 ids (p ≥ spec-min-p) on the priority stream','GPU — draft resident','835 MiB VRAM · drafts accepted 1,082 of 1,299'],
+   ['9','verify','the ≤6-token window replays its captured CUDA graph through all 48 blocks; longest accepted prefix kept','GPU — one graph launch','windows 1–6 captured · decode cache hit 59.1–85.8%'],
+   ['10','emit','accepted ids are detokenized into SSE deltas + usage','serve/ → client','31.8–55.9 tok/s across requests'],
+   ['11','loop','stages 8–10 repeat until eos/stop; conversation snapshots make restarts cheap','engine','32 checkpoints kept in one request']]},
+ flow:['request → template → tokenize (stages 1–3)',
+       'prompt cache: reuse the prefix, prefill only the tail (4–6)',
+       'first token from the head (7)',
+       'loop: draft ≤4 → verify ≤6 in one graph → sample → emit (8–10)',
+       'meanwhile: experts move cache ↔ PCIe (38.0 GB/s probe) ↔ CPU pool; KV cells stream RAM → VRAM (98.41% hits)',
+       'stop at eos → the conversation becomes the next turn’s cached prefix'],
+ kv:[['throughput','43.7–55.9 tok/s generated at ~108–110K context'],
+     ['prefill','1,906.3 tok/s cold (155K ids) · 602.8 tok/s warm tail'],
+     ['draft acceptance','81–100% across requests (e.g. 245 of 286)'],
+     ['PCIe','38.0 GB/s host→device probe · pcie_frac 0.55'],
+     ['CUDA graphs','one per verify-window size 1–6'],
+     ['snapshots','conversation checkpoints (32 in one request)']],
+ links:[['↔ stages 1–10','each row is one block of this view — click them for the deep version'],
+        ['↔ Model tower','what stages 5–9 run through, block by block'],
+        ['↔ Kernel stack','the kernels each stage launches (phases 1–8)'],
+        ['↔ Strata stack','the processes and tiers the “where” column refers to'],
+        ['↔ server','/v1/chat/completions, /v1/messages, /metrics (docs/DETAILS.md)']],
+ log:['strata serve: prompt 155423 tokens = 0 reused + 155423 read in 81533 ms (1906.3 tok/s)',
+      'strata serve: prompt 157088 tokens = 155618 reused + 1470 read in 2439 ms (602.8 tok/s), 2076 generated in 45912 ms (45.2 tok/s), drafts accepted 1082 of 1299, 12 checkpoints'],
+ note:'Throughput ranges span all requests in the log; single-request numbers are quoted from the request named in the log lines.'});}
+function buildFlow(){
+  const W=200,H=64,D=70,xs=[-440,-220,0,220,440],ys=[-110,90];
+  FLOW.forEach((s,i)=>{
+    const row=i<5?0:1;
+    const x=xs[row===0?i:9-i], y=ys[row];
+    s._x=x; s._y=y;
+    block({w:W,h:H,d:D,x,y,z:0,c:s.c,label:s.t,sub:s.short,open:()=>showStage(i,true)});
+    if(i<9){const n=FLOW[i+1];
+      if(n._y===y)conn(x+W/2+4,y,n._x-W/2-4,y,0,'#14b8a666');
+      else conn(x,y+H/2+4,x,n._y-H/2-4,0,'#14b8a666');}
+  });
+  fDot=document.createElement('div'); fDot.className='dot'; fDot.style.opacity=0; world.appendChild(fDot);
+  block({w:270,h:46,d:D+10,x:0,y:-196,z:0,c:C.api,label:'INFERENCE PASS — STAGE TABLE',sub:'11 stages · where each runs · measured',open:infDetail});
+  conn(0,-173,0,-142,0,'#ffffff2e');
+  $('#flowbar').classList.add('open'); showStage(0,false);
+  legend([[C.api,'request / overview'],[C.blue,'tokenize / cache'],[C.ple,'embed + PLE'],[C.violet,'prefill'],[C.mtp,'draft'],[C.attn,'verify'],[C.green,'stream out']]);
+}
+function showStage(i,move){
+  fIdx=i; const s=FLOW[i];
+  document.querySelectorAll('.blk').forEach(b=>b.classList.remove('sel'));
+  $('#fstep').textContent=`stage ${i+1} / ${FLOW.length}`;
+  $('#ftext').innerHTML=`<b>${s.t}</b> — ${s.short}`;
+  if(move){
+    fDot.style.transition='transform 2.2s cubic-bezier(.4,0,.4,1), opacity .3s'; fDot.style.opacity=1;
+    fDot.style.transform=`translate3d(${s._x}px,${s._y-52}px,60px)`;
+    openPanel({tag:'flow stage',c:s.c,title:s.t,sub:s.short,desc:s.desc,flow:s.flow,links:s.links,
+      extra:(s.ex?`<h3>Example</h3><div class="logq" style="color:#9fd6ff">${s.ex}</div>`:''),
+      log:s.log,note:s.note});
+  }
+}
+function flowPlay(){
+  if(fTimer){clearInterval(fTimer);fTimer=null;$('#fbtn').textContent='▶ Play flow';return;}
+  $('#fbtn').textContent='⏸ Pause';
+  let i=(fIdx+1)%FLOW.length;
+  showStage(i,true);
+  fTimer=setInterval(()=>{i=(i+1)%FLOW.length;showStage(i,true);},2800);
+}
+const KLANES=[
+{h:1,t:'Languages & shared',c:'#475569',sub:'what it is written in · what it reuses',d:{
+  owner:'the build: nvcc (NVIDIA) or hipcc (AMD) for the GPU, g++/clang for the CPU half',
+  desc:`Everything the engine computes is compiled C++ — no interpreter, no runtime code generation in the forward
+  pass. The GPU half is CUDA C++ in <b>src/kernels/cuda</b> (44 .cu + 2 .cuh) and <b>src/prefill</b> (9 .cu); the CPU
+  half is 20 .cpp in <b>src/kernels/cpu</b>. Inline PTX appears only where C++ cannot name the instruction. One
+  library does arithmetic (cuBLAS / hipBLASLt, prefill only), and several kernels are transcribed from llama.cpp.
+  Python exists only in <b>serve/</b>; no Triton, no FlashInfer, no PyTorch.`,
+  flow:['the engine calls a kernel (e.g. attend() for one head of one layer)',
+        'nvcc/hipcc already turned it into SASS/ISA code at build time',
+        'the launch passes an explicit stream, grid and block size, and a status word',
+        'the kernel writes its result buffer; a parity test compares it with a scalar reference'],
+  kv:[['CUDA sources','44 .cu + 2 .cuh (src/kernels/cuda) · 9 .cu (src/prefill)'],
+      ['CPU sources','20 .cpp: experts, i-quants, k-quants, worker pool'],
+      ['libraries','cuBLAS / hipBLASLt for prefill GEMM only'],
+      ['parity tests','49 files under src/kernels compare kernels bit for bit'],
+      ['no JIT','kernels are fixed at build time — CUDA graphs can capture them safely']],
+  links:[['→ HC & projections','the kernels that read the weights first'],
+         ['→ mixer','the two attention families'],
+         ['→ FFN column','router, experts, combine'],
+         ['↔ model tower','the kernels read exactly the tensors the tower shows']]}},
+
+{h:1,t:'HC & projections',c:'#475569',sub:'1 read · 2 project + rotate · 4 write',d:{
+  owner:'src/kernels/cuda: gr.cu / fused_gr.cu / native_gr_* (hyper-connection) · native_mmvq.cu · native_rope.cu',
+  desc:`The frame around every mixer. A block does not own one residual vector but <b>four streams</b> (4 × 2560);
+  the hyper-connection collapses them to the one vector the mixer consumes (phase <b>1</b>) and folds the result back
+  into all four (phase <b>4</b>) — the same kernel, two directions, which is why one block carries the badge
+  <b>1+4</b>. In between, phase <b>2</b> runs the dense projections over GGUF weights and rotates q/k.`,
+  flow:['in: 4 streams × 2560 from the previous block',
+        'gr_read: norm per stream → rank-320 mix → one 2560 vector + per-stream injection',
+        'projections: native_mmvq (decode, 1–8 columns) or one cuBLAS GEMM (prefill)',
+        'RoPE: 64 of 256 dims rotate, base 1e7 (2-D M-RoPE for image tokens)',
+        'out: q/k/v/gate for the mixer — and after it, gr_write folds the result back into 4 streams'],
+  kv:[['HC weights','~13.7 MiB per block · BF16 stored as the high half of the pack’s f32'],
+      ['streams','4 × 2560, rank 320'],
+      ['mat-vec','Q8_1 activations, 36 bytes per 32 values, 1–8 token columns'],
+      ['prefill','cuBLAS / hipBLASLt GEMM over the chunk instead'],
+      ['RoPE','64 of 256 dims, base 1e7']],
+  links:[['← embedding / previous block','the 4 residual streams'],
+         ['→ mixer','the projected q/k/v/gate'],
+         ['↔ llama.cpp','HC arithmetic from qwen4exp.cpp build_hc_mix / combine'],
+         ['↔ cuBLAS','the prefill branch of the same phase 2']]}},
+
+{h:1,t:'Mixer — GDN or attention',c:'#475569',sub:'3a linear · 3b full attention',d:{
+  owner:'36 GDN blocks (every block that is not a 4th) and 12 attention blocks (3, 7, … 47) + the MTP draft block',
+  desc:`Phase <b>3</b> has two implementations, and a block runs exactly one of them:
+  <b>3a</b> Gated DeltaNet (36 blocks, fixed 16×128 state, cost independent of context) or
+  <b>3b</b> full attention (12 blocks: a BF16 indexer scores every position, a top-k keeps 2,048 cells, int8 KV is
+  fetched and the flash kernel attends over the selection). Both produce the same 2560-wide output for phase 4, which
+  is why they share the number 3 and sit in this one column, split by the <b>or</b> marker.`,
+  flow:['in: q/k/v/gate from phase 2',
+        '3a: causal conv (k=4) → delta-rule state update (state 16×128, 512 threads) → 6144-wide output × gate',
+        '3b.1: indexer q/k (BF16 4×128) score every past position',
+        '3b.2: order-preserving uint32 + block top-k → 2,048 cells',
+        '3b.3: fetch those cells as int8 (98.9–99.6% already in VRAM)',
+        '3b.4: Q·K → online softmax → P·V over the selection',
+        'out (both): 24 heads × 256 → 6144 → 2560, handed to phase 4'],
+  kv:[['split','36 GDN · 12 attention of 48 blocks'],
+      ['GDN state','16 × 128 floats per sequence, fixed'],
+      ['attention','24 Q heads × 256 · 2 KV heads (12:1) · top-2048 cells'],
+      ['KV format','int8, 32,768 of 262,144 cells resident per layer'],
+      ['measured','98.9–99.6% of KV block reads hit VRAM']],
+  links:[['← HC & projections','q/k/v/gate and the rotated q/k'],
+         ['→ HC & projections','phase 4 writes the result back'],
+         ['↔ llama.cpp','flash kernel from fattn-vec, indexer from qwen4exp'],
+         ['↔ KV tier','attention cells stream over the same PCIe as experts']]}},
+
+{h:1,t:'FFN, MoE & combine',c:'#475569',sub:'5 router · 6 experts · 7 combine',d:{
+  owner:'every block: router and shared expert in VRAM, routed experts split across GPU cache, PCIe and CPU pool',
+  desc:`The MoE half mirrors the memory tiers: the same expert bytes are computed by a <b>GPU grouped kernel</b>
+  (int8 × int8, __dp4a) when the blob is in the cache or just copied over PCIe, or <b>in place on the CPU</b> by the
+  AVX2 pool when it is not. The router picks the ten experts on the device (phase <b>5</b>), the experts run
+  (phase <b>6</b>), and the combine adds them plus the always-on shared expert (phase <b>7</b>).`,
+  flow:['hidden (2560) → router GEMV → 512 logits → softmax over all 512',
+        'stable top-10 → (expert id, weight), ties by ascending index',
+        '6: GPU grouped kernel or CPU AVX2 kernel, wherever the blob lives',
+        'SwiGLU per expert (2560→640→2560)',
+        '7: weighted sum + the shared expert → one 2560 delta → phase 4'],
+  kv:[['experts','512 per layer · top 10 per token · 1 shared'],
+      ['expert maths','int8 weights + int8 activations, __dp4a, fp16 scales per 64/32'],
+      ['CPU path','23 pool workers + host thread · AVX2 on this CPU'],
+      ['cache','5,261 slots · 15.34 GiB · 49–86% hit depending on phase']],
+  links:[['← mixer','the hidden state the router scores'],
+         ['→ HC write','the delta enters phase 4'],
+         ['↔ memory tiers','cache / PCIe / CPU decision per expert'],
+         ['↔ sampler','weights come from the router']]}},
+
+{h:1,t:'Sampling, launch & rest',c:'#475569',sub:'8 sample · replay · what is not used',d:{
+  owner:'src/kernels/cuda/sampler.cu · src/core/graph.cpp · src/core/verify.cpp · src/core/mtp.cpp',
+  desc:`After 48 blocks the head emits 248,320 logits and phase <b>8</b> turns them into a token. The rest of this
+  column is not a phase: CUDA graphs replay the whole sequence, PDL overlaps consecutive kernels, the MTP stream
+  drafts the next tokens, and the last block lists what this stack deliberately does not use.`,
+  flow:['output head → 248,320 logits per token',
+        '8: penalties → argmax (8-CTA cluster) or top-k / top-p / min-p → token id',
+        'the id goes to the MTP priority stream for drafts',
+        'the next verify window replays its captured graph (phases 1–8 again)'],
+  kv:[['sampler','clustered argmax 6 µs vs 40 µs one-block (kernel comment)'],
+      ['graphs','one per window size 1–6, captured at start (log)'],
+      ['PDL','opt-in STRATA_DF_PDL=1, kernel→kernel edges, CUDA ≥ 12.3'],
+      ['not used','Triton · FlashInfer · PyTorch · vLLM — 0 references']],
+  links:[['← FFN column','the final hidden state'],
+         ['→ server','token ids leave the engine'],
+         ['↔ MTP','drafts on the high-priority stream'],
+         ['↔ CUDA graphs','the next window is one graph launch']]}},
+
+// ---------------- column 1 ----------------
+// ---------------- column 1 ----------------
+{lane:0,t:'CUDA C++',c:'#3b82f6',sub:'44 .cu + 2 .cuh',d:{
+  owner:'src/kernels/cuda (44 .cu, 2 .cuh) · src/prefill (9 .cu) · compiled by nvcc for the target SM',
+  desc:`Every GPU computation in Strata is a hand-written <code>__global__</code> function in C++. Launch geometry is
+  fixed per kernel: attention uses 128 threads with <code>__launch_bounds__(128, 1)</code>, the fused GDN kernel 512,
+  the sampler 1,024. Shared memory is statically sized, weights stay in their GGUF block formats, and no kernel
+  allocates. That is what makes the whole window capturable as a CUDA graph.`,
+  flow:['a call site in src/core/layer.cpp or src/program/generate.cpp picks the kernel',
+        'grid/block/shared-memory sizes are compile-time constants (or a small table)',
+        'the kernel runs on the explicit stream it is given, reading device pointers only',
+        'out: a result buffer plus, for guarded kernels, a status word checked by the host'],
+  kv:[['count','44 .cu + 2 .cuh under src/kernels/cuda; 9 .cu under src/prefill'],
+      ['example configs','flash attention 128 threads · fused GDN 512 · sampler 1,024'],
+      ['precision','half, bf16, f32 accumulate; int8 weights; fp16 scale factors'],
+      ['allocation','none inside kernels; buffers are owned by the engine'],
+      ['validation','49 parity tests compare each kernel with a scalar reference']],
+  links:[['→ inline PTX','four kernels drop to PTX for copies, tensor cores, rounding, clusters'],
+         ['→ HIP','the same files compile with hipcc through the compat shim'],
+         ['↔ parity tests','src/kernels/*_parity.cpp: bit-exact against the reference arithmetic'],
+         ['← engine','one call site per kernel, on an explicit stream']]}},
+{lane:0,t:'Inline PTX',c:'#6366f1',sub:'cp.async · mma · clusters',d:{
+  owner:'four kernels: fused_gr.cu, native_qsa_score.cu, native_rope.cu, sampler.cu',
+  desc:`Inline assembly is used only where the C++ model has no name for the hardware operation:
+  <b>async copy</b> (<code>cp.async.cg.shared.global</code>, 16 bytes, commit/wait groups — a double-buffered load in
+  the hyper-connection read), <b>tensor-core fragments</b> (<code>ldmatrix.sync.aligned.m8n8.x4.b16</code> followed by
+  <code>mma.sync.aligned.m16n8k8.row.col.f32.tf32.tf32.f32</code> for the indexer scores), a <b>rounding barrier</b>
+  (<code>mov.f32</code> of a value onto itself, so the compiler cannot fuse the fp32 rounding step away in RoPE), and
+  the <b>thread-block cluster rank</b> (<code>mov.u32 %0, %cluster_ctarank</code>) used by the clustered greedy sampler.`,
+  flow:['cp.async: guest→shared copy issued early, wait_group 1 keeps one stage in flight',
+        'ldmatrix: 8×8 b16 tiles loaded in the layout mma expects, four at a time',
+        'mma.sync: one TF32 matrix-multiply-accumulate per instruction, fp32 accumulate',
+        'mov.f32: forces the intermediate through a register so rounding happens where the reference rounds',
+        '%cluster_ctarank: identifies each CTA inside a 8-CTA cluster for the distributed argmax'],
+  kv:[['cp.async','fused_gr.cu — cp.async.cg.shared.global [%0],[%1],16 + commit/wait group'],
+      ['tensor cores','native_qsa_score.cu — ldmatrix.m8n8.x4.b16, mma.m16n8k8 TF32'],
+      ['rounding','native_rope.cu — mov.f32 %0,%1 barriers around the rotation'],
+      ['clusters','sampler.cu — mov.u32 %0,%%cluster_ctarank (sm_90+, 8 CTAs/token)'],
+      ['measured','clustered argmax 6 µs vs 40 µs one-block (decode_cluster_parity --bench, reference card)'],
+      ['HIP','the cluster path is compiled out under __HIPCC__; AMD uses the portable argmax']],
+  links:[['→ gated residual','cp.async feeds the HC read (fused_gr.cu)'],
+         ['→ top-k select','the TF32 mma produces the indexer scores'],
+         ['→ sampler','the cluster path is the greedy argmax for the verify window'],
+         ['↔ CUDA C++','PTX is still assembled ahead of time — ptxas, no runtime JIT']]}},
+{lane:0,t:'HIP for AMD',c:'#ef4444',sub:'same sources · hipBLASLt',d:{
+  owner:'include/strata/hip_compat (6 headers) + include/strata/platform/hip_compat + gfx_arch.hpp',
+  desc:`AMD builds compile the same .cu files with hipcc. The compatibility layer supplies the CUDA names the sources
+  use (runtime API and <code>cublas_v2.h</code>), <code>gfx_arch.hpp</code> selects code by architecture, and the
+  prefill GEMM switches to hipBLASLt (<code>STRATA_HIPBLASLT_AVAILABLE</code>, plus a tuning file). Kernels that need
+  NVIDIA-only instructions are compiled out — the cluster sampler is one of them.`,
+  flow:['cmake picks hipcc and defines STRATA_USE_HIP',
+        'cuda_runtime.h / cublas_v2.h resolve to the shim, not to CUDA',
+        'gfx_arch.hpp picks the kernel variant for the target GPU',
+        'prefill: hipBLASLt replaces cuBLAS; decode kernels are unchanged',
+        'the same 49 parity tests validate the result'],
+  kv:[['shim','6 headers in include/strata/hip_compat'],
+      ['GEMM','hipBLASLt with a tuning file; cuBLAS on NVIDIA'],
+      ['arch','include/strata/kernels/gfx_arch.hpp'],
+      ['docs','docs/AMD_HIP.md — build and validation steps'],
+      ['limits','cluster-only kernels are compiled out (__HIPCC__), portable path used']],
+  links:[['← CUDA C++','one source tree, two compilers'],
+         ['↔ cuBLAS/hipBLASLt','the only library swap in the engine'],
+         ['↔ parity tests','same oracle vectors on both vendors']]}},
+{lane:0,t:'llama.cpp shared code',c:'#0d9488',sub:'fattn · qwen4exp · mtmd',d:{
+  owner:'third_party/ggml + the pinned llama.cpp commit 3cf03257 (MIT)',
+  desc:`Strata is not a fork of llama.cpp, but it deliberately reuses the parts where being different buys nothing:
+  the <b>flash-attention</b> vector kernels (specialized into native_flash_attn.cu), the <b>model semantics</b> of
+  qwen4exp.cpp (indexer, hyper-connections, MoE), the ggml <b>quantizers and dot products</b> (transcribed into
+  iq_kernels.cu / native_mmvq.cu, and ggml’s own kernels for the i-quant CPU rows), the ggml reference quantizer used
+  by <code>--mtp-q4</code> at load, and the <b>mtmd</b> vision encoder, which runs as a separate
+  <code>strata-vision</code> binary. The GGUF format itself is read natively.`,
+  flow:['flash attention: llama.cpp fattn-vec → specialized to D=256, 12:1 GQA, step guard',
+        'model semantics: qwen4exp.cpp build_hc_mix/combine → gr.cu; indexer → native_qsa_indexer.cu',
+        'quantization: ggml block structs + vecdotq → iq_kernels.cu, native_mmvq.cu, CPU expert kernels',
+        'load-time: ggml_quantize_chunk for the --mtp-q4 requantization',
+        'vision: ENC image → strata-vision (mtmd + mmproj-F16) → 576 rows × 2560'],
+  kv:[['pinned commit','llama.cpp 3cf03257f219afbe7334045ff7c6a06ac68c627d (MIT)'],
+      ['attention','fattn-vec.cuh / fattn-common.cuh / common.cuh'],
+      ['model','qwen4exp.cpp (indexer, HC, MoE) · ggml set-rows/norm/rope'],
+      ['quant','ggml-common.h block structs, vecdotq.cuh, quantize.cu, moe-weighted-reduction.cu'],
+      ['vision','mtmd in a separate binary (serve/server.py spawns it)'],
+      ['not shared','scheduler, memory tiers, expert cache, CUDA graphs — Strata’s own']],
+  links:[['→ attention kernels','the flash kernel’s ancestor'],
+         ['→ FFN kernels','quantized dot products + MoE reduction'],
+         ['→ vision path','mtmd + mmproj-F16'],
+         ['↔ GGUF','its on-disk format and quantization blocks are the common tongue']]}},
+
+// ---------------- column 2 ----------------
+
+// ---------------- column 2 ----------------
+{lane:1,n:'1+4',t:'Gated residual (HC)',c:'#d97706',sub:'fused_gr.cu · 4 streams',d:{
+  owner:'src/kernels/cuda/gr.cu, fused_gr.cu, native_gr_norm.cu, native_gr_postops.cu — from qwen4exp build_hc_mix / build_hc_combine',
+  desc:`The hyper-connection read/write for the 4 residual streams. <code>gr_read</code> collapses the stack to the one
+  vector the mixer consumes and produces a per-stream injection; <code>gr_write</code> puts the result back into every
+  stream, weighted per stream. Weights are BF16 stored as the high 16 bits of an f32 in a uint16_t — lossless for the
+  pack and worth 1.374 GiB of the 5.305 GiB dense file. The fused variant stages activations with
+  <code>cp.async</code> 16-byte copies and is checked bit-for-bit against the plain read.`,
+  flow:['in: 4 streams × 2560 (the block’s residual state)',
+        'norm per stream → low-rank mix (320) → one 2560 vector for the mixer',
+        'per-stream injection vector produced alongside',
+        'after the mixer/RoPE: HC write adds the result back, weighted per stream',
+        'out: 4 updated streams for the next block'],
+  kv:[['files','gr.cu (plain) · fused_gr.cu (staged) · norm/postops'],
+      ['rank','320 (hc_*_up / down), 4 streams of 2560'],
+      ['storage','BF16 as the high half of the pack’s f32 → uint16'],
+      ['saving','1.374 GiB of the 5.305 GiB dense file'],
+      ['measured','"runs as staged (…cp.async); checked bit for bit" (log line)']],
+  links:[['← attention/GDN mixer','its output is written back'],
+         ['→ next block','4 streams carry the residual'],
+         ['↔ inline PTX','cp.async.cg.shared.global, 16 bytes, double-buffered'],
+         ['↔ GGUF','288 of the shard’s 483 BF16 tensors are hc_*']]}},
+{lane:1,n:'2',t:'MMVQ mat-vec',c:'#fb923c',sub:'native_mmvq.cu · Q4_K…Q8_0',d:{
+  owner:'src/kernels/cuda/native_mmvq.cu (+ s2_gemv*, s_gemv*, q8_1_il.cuh) — from ggml quantize.cu / vecdotq.cuh / mmvq.cu',
+  desc:`The decode-time matrix-vector product over the dense weights, which stay in their GGUF formats (Q2_0, Q4_0,
+  Q5_0, Q8_0, Q3_K–Q6_K, IQ4_NL, IQ4_XS). Activations are quantized to Q8_1 (fp16 scale + fp16 warp sum, 36 bytes per
+  32 elements) and dequantized inside the dot product. One to eight token columns share the same weight read, which is
+  the reason a verify window of six tokens costs far less than six separate passes. Bitwise single-column equality is
+  a deliberate option (<code>native_mmvq_set_multi_exact</code>), chosen before graph capture.`,
+  flow:['in: activation row(s), 1–8 columns, Q8_1-quantized',
+        'quantize the input once; reuse for every weight matrix that shares it',
+        'per output row: dot over GGUF blocks, dequantize in-register',
+        'multi-column: the same weight block feeds 1–8 token columns',
+        'out: n_out floats per column (2560 / 12288 / … depending on the projection)'],
+  kv:[['file','native_mmvq.cu; formats Q2_0…Q6_K, IQ4_NL/IQ4_XS'],
+      ['activations','Q8_1, 36 bytes per 32 values, fp16 scale + sum'],
+      ['columns','1..8 tokens per call'],
+      ['exact mode','native_mmvq_set_multi_exact(true) = bitwise equal to ncols 1'],
+      ['siblings','s2_gemv / s2_gemv_fast / s2_gemv_quads / s_gemv / s_gemv_q8k']],
+  links:[['← decode step','1–6 token columns from the verify window'],
+         ['↔ cuBLAS','prefill uses the library, decode this kernel'],
+         ['↔ parity','mmvq_il_parity, s2_gemv_parity, s_gemv_parity …'],
+         ['← graph capture','exact mode must be set before capture']]}},
+{lane:1,n:'2',t:'RoPE / M-RoPE',c:'#0ea5e9',sub:'native_rope.cu · 64/256',d:{
+  owner:'src/kernels/cuda/native_rope.cu + include/strata/…/mrope.hpp (vision positions)',
+  desc:`Partial rotary position embedding: 64 of the 256 head dimensions rotate, base 1e7; the other 192 pass through.
+  The kernel is written so the float rounding matches the reference exactly — the <code>mov.f32</code> self-moves are
+  there to stop the compiler from folding the intermediate. For image tokens the position is two-dimensional
+  (M-RoPE): row and column instead of a single index, applied to the same rotary dims.`,
+  flow:['in: q or k row (256 per head), position, base',
+        'compute cos/sin for the 64 rotary dims at that position',
+        'rotate in pairs; pass the remaining 192 dims through',
+        'for images: two positions (row, col) instead of one, from the vision encoder’s grid',
+        'out: the rotated row, ready for the score kernels'],
+  kv:[['file','native_rope.cu'],['dims','64 of 256 (25%)'],['base','1e7'],
+      ['precision','float; mov.f32 barriers keep the rounding identical'],
+      ['M-RoPE','2-D positions for image tokens (mrope)'],
+      ['used by','Q/K of the attention blocks and the indexer q/k']],
+  links:[['← attention block','applied to q and k before scoring'],
+         ['← vision path','image rows carry 2-D positions'],
+         ['↔ indexer','the indexer rotates its own q/k'],
+         ['↔ parity','rope_parity + the qwen4exp reference']]}},
+
+// ---------------- column 3 ----------------
+{lane:1,t:'cuBLAS / hipBLASLt',c:'#0ea5e9',sub:'prefill GEMM only',d:{
+  owner:'src/prefill/gemm.cu (+ src/prefill/moe_fused.cu for the fused MoE prefill path)',
+  desc:`The single place a vendor library does arithmetic: prompt processing multiplies the dense projections as a
+  batched GEMM, because the shape is thousands of tokens × 2560 and a library is the right tool. Decode is the
+  opposite shape — one to six token columns — so it runs the engine's own mat-vec kernels (native_mmvq, s2_gemv,
+  s_gemv), which fuse the dequantization into the dot product.`,
+  flow:['prefill chunk (≤ 8,192 tokens) → activations quantized to Q8_1',
+        'cuBLAS / hipBLASLt GEMM over the dense projection (2560 → 12288 / 10240 / 6144 …)',
+        'result dequantized/scaled back to the layer dtype',
+        'decode step instead: native_mmvq / s2_gemv with 1–8 columns'],
+  kv:[['library','cuBLAS (NVIDIA) · hipBLASLt (AMD, tuned)'],
+      ['used for','prefill GEMM of dense projections'],
+      ['not used for','decode mat-vec — 1–8 columns, hand kernels are faster'],
+      ['flavour','fp16/bf16 inputs with fp32 accumulate where the layer allows'],
+      ['file','src/prefill/gemm.cu, gemm.hpp']],
+  links:[['← engine','called once per projection per prefill chunk'],
+         ['→ prefill path','feeds the 48 blocks of the chunk'],
+         ['↔ native_mmvq','the decode-time replacement, same weights, different shape'],
+         ['↔ HIP','same file, hipBLASLt branch']]}},
+
+// ---------------- column 3 ----------------
+{lane:2,n:'3a',t:'Fused GDN',c:'#eab308',sub:'fused_gdn.cu · state 128',d:{
+  owner:'src/kernels/cuda/fused_gdn.cu, native_gdn_preprocess.cu, native_gdn.cu, gdn.cu',
+  desc:`The DeltaNet mixer, fused into one kernel: state S = 128 (per group), four row groups (RG = 4, 32 rows each,
+  512 threads total), shared <code>sk</code>/<code>sq</code>/<code>red</code> arrays, and the L2 normalization folded in
+  instead of a separate pass. The preprocess kernel applies the short causal convolution (kernel 4) as a strided row
+  shift, matching ggml’s <code>ggml_reshape_3d(state, d_conv−1, conv_channels, n_seqs)</code> layout. Because the state
+  is fixed-size, decode cost does not grow with context.`,
+  flow:['in: 4 residual streams → HC read → RMSNorm → q/k/v/gate projections',
+        'preprocess: causal conv (k=4) over the 10,240-wide q/k/v',
+        'fused kernel: gate normalization, delta-rule state update, output projection input',
+        'state stays 16 × 128 floats per sequence — rewritten every token',
+        'out: 6144-wide mixer output × gate → 2560'],
+  kv:[['files','fused_gdn.cu + native_gdn_preprocess.cu'],
+      ['constants','S = 128 · RG = 4 row groups (32 rows) · 512 threads'],
+      ['shared','sk, sq, red — one staging area per block'],
+      ['conv','kernel 4, strided row copy (ggml layout)'],
+      ['parity','gdn_parity, fused_gdn vs scalar']],
+  links:[['← GDN block','36 of 48 blocks use this mixer'],
+         ['↔ KV','no per-token cache: fixed 16×128 state'],
+         ['→ gated residual','mixer output written back to 4 streams'],
+         ['↔ verify_kernels','the window version reproduces plain decode bit for bit']]}},
+{lane:2,n:'3b.1',t:'QSA indexer',c:'#a78bfa',sub:'native_qsa_indexer.cu',d:{
+  owner:'src/kernels/cuda/native_qsa_indexer.cu — adapted from llama.cpp qwen4exp.cpp + ggml set-rows.cu / norm.cu / rope.cu (MIT)',
+  desc:`The cheap scorer that makes the sparsity possible. The model carries a small BF16 indexer (4 heads × 128
+  dims); its q/k projections are normalized and rotated, then multiplied against every past position to produce one
+  score per position. This is the only O(context) attention kernel, which is why it is deliberately tiny: 128 dims ×
+  4 heads instead of 256 × 24, and BF16 instead of int8 dot products.`,
+  flow:['in: hidden state (2560) + indexer q/k weights (BF16)',
+        'q_proj → 512 (4 × 128), k_proj → 128, per-head RMSNorm, partial RoPE',
+        'write k into the indexer cache, one row per position',
+        'score: q · k over every cached position → one float per position',
+        'out: a score row for the top-k selector'],
+  kv:[['file','native_qsa_indexer.cu (from qwen4exp.cpp, ggml set-rows/norm/rope)'],
+      ['shape','4 heads × 128 dims, BF16'],
+      ['ops','set-rows (cache write), RMSNorm, partial RoPE, dot product'],
+      ['cost','O(context) per query — the smallest kernel in the attention path'],
+      ['role','decides which 2,048 cells the expensive kernels may read']],
+  links:[['← attention block','runs before attention, every 4th block'],
+         ['→ top-k select','hands over the score row'],
+         ['↔ GGUF','indexer.q_proj / k_proj / q_norm / k_norm tensors'],
+         ['↔ llama.cpp','same arithmetic as the pinned qwen4exp implementation']]}},
+{lane:2,n:'3b.2',t:'Top-k select',c:'#c084fc',sub:'qsa_select.cu · top-2048',d:{
+  owner:'src/kernels/cuda/qsa_select.cu, native_qsa_score.cu · oracle: qsa_oracle_vectors.inc',
+  desc:`Turns a score row into the set of cells attention will read. Scoring runs on tensor cores
+  (<code>ldmatrix</code> + <code>mma.sync.m16n8k8</code> in TF32); selection is integer work on top of a monotone map
+  from float to uint32 (<code>order_key</code>: flip the sign bit for positives, invert everything for negatives), so
+  a plain unsigned compare orders floats correctly, including negatives, without branches. The block reduction keeps
+  a 256-entry tile (<code>TOPK_T</code>) and 8 score warps; the benchmark and oracle vectors pin the result against a
+  scalar sort.`,
+  flow:['in: indexer score row (one float per position)',
+        'map each score through order_key → uint32 (order-preserving)',
+        'per-warp partial top-k over 256-entry tiles, merge across warps',
+        'threshold back to floats, keep the top 2,048 cells',
+        'out: cell indices for qsa_prompt_attn / qsa_decode_attn'],
+  kv:[['files','qsa_select.cu · native_qsa_score.cu'],
+      ['constants','IDX_DIM 128 · IDX_HEADS 4 · TOPK_T 256 · 8 score warps'],
+      ['trick','order_key(float) → uint32: sign-bit flip makes integer sort correct'],
+      ['tensor cores','ldmatrix.m8n8.x4.b16 + mma.m16n8k8 TF32'],
+      ['oracle','qsa_oracle_vectors.inc + qsa_select_bench']],
+  links:[['← indexer','the score row'],
+         ['→ attention kernels','the cell list they consume'],
+         ['↔ parity','qsa_topk_parity / qsa_topk_active_parity compare against a scalar sort'],
+         ['↔ KV stream','only the selected cells need to be resident']]}},
+{lane:2,n:'3b.3',t:'int8 KV + stream',c:'#0d9488',sub:'kv_q8/q4/stream · 32,768',d:{
+  owner:'src/kernels/cuda/kv_q8.cu, kv_q4.cu, kv_stream.cu (+ include/strata/kernels/kv_*.hpp)',
+  desc:`The cache is stored quantized (int8 with a 4-bit variant) and only part of it is resident in VRAM: 32,768 of
+  262,144 cells per QSA layer, the rest in 3.09 GiB of page-locked RAM. <code>kv_stream.cu</code> copies the cells a
+  step needs and returns them; <code>kv_q8.cu</code>/<code>kv_q4.cu</code> hold the block formats and the quantize /
+  dequantize-in-the-dot paths. In the reference run 98.9–99.6% of block reads hit VRAM and 701.7 MiB crossed PCIe in
+  one long request — the same bus and the same tier logic as the expert cache.`,
+  flow:['a token needs cells [i…j] of a layer',
+        'resident window hit → read int8 blocks from VRAM (98.9–99.6% of reads)',
+        'miss → copy the cell block from pinned RAM over PCIe (701.7 MiB in one request)',
+        'kernel dequantizes inside the dot product (no expanded copy)',
+        'write path: new K/V quantized to int8, inserted, oldest streamed out'],
+  kv:[['format','int8 per 32/64 elements + fp16 scale; Q4 variant available'],
+      ['window','32,768 of 262,144 cells per layer (12.5%)'],
+      ['RAM','3.09 GiB pinned'],
+      ['measured','99.64% VRAM hits of 49,043,520 block reads; 701.7 MiB streamed'],
+      ['compression','ratio 4 (model metadata) — 4× smaller than fp16 KV']],
+  links:[['← attention kernels','their K/V source'],
+         ['↔ memory tiers','same PCIe link as the expert cache'],
+         ['→ KV write path','prefill and decode both write quantized cells'],
+         ['↔ QSA','residency follows the selected cells, not the raw context']]}},
+{lane:2,n:'3b.4',t:'Flash attention (decode)',c:'#14b8a6',sub:'native_flash_attn.cu',d:{
+  owner:'src/kernels/cuda/native_flash_attn.cu — specialized from llama.cpp 3cf03257 fattn-vec.cuh / fattn-common.cuh (MIT)',
+  desc:`One block per query head. Head dim 256, 128 threads, K and V in half precision, FP32 accumulation. Twelve
+  query heads share one KV head (<code>kv = head / 12</code>), the KQ/V split is 8/8 in the template, every load moves
+  four values (a <code>float2</code>) and every iteration keeps four V columns; the online softmax reduces with
+  <code>__shfl_xor_sync</code> (warp max, then warp sum). The padded length of 256 gives one KV tile, so the launcher
+  fixes <code>grid.y = 1</code>. Before any arithmetic the kernel validates the step descriptor (width, n_kv, pos,
+  n_bid) and, if it does not match, writes NaN plus a status word instead of a silently wrong result.`,
+  flow:['in: one query row (256 floats), K/V tiles (half), a step descriptor, scale, optional mask',
+        'validate the descriptor → status word (kNativeFlashAttnSuccess or UnsupportedStep)',
+        'per KV tile: q·k → scale → running max → exp → running sum (shfl_xor reductions)',
+        'accumulate P·V in float2 registers (4 output columns per iteration)',
+        'out: 256 floats for the head + the status word'],
+  kv:[['file','native_flash_attn.cu (~fattn-vec from llama.cpp 3cf03257, MIT)'],
+      ['geometry','128 threads · D = 256 · one KV tile (padded 256) · grid.y = 1'],
+      ['loads','float2 (4 values) per load · 4 V columns per iteration'],
+      ['softmax','online, warp reductions via __shfl_xor_sync (max, sum)'],
+      ['guard','step descriptor validated in-kernel; NaN + status on mismatch'],
+      ['precision','Q/K/V half, accumulation float']],
+  links:[['← attention block','one call per head per layer (12 layers)'],
+         ['← top-k select','which KV cells this call reads'],
+         ['→ int8 KV','K/V come from the quantized cache (resident or streamed)'],
+         ['↔ parity','qsa/attention oracles + the run-log step checks']]}},
+{lane:2,n:'3b.4',t:'QSA prompt attention',c:'#8b5cf6',sub:'qsa_prompt_attn.cu',d:{
+  owner:'src/kernels/cuda/qsa_prompt_attn.cu (+ kv_q8.hpp / kv_q4.hpp for the cache formats)',
+  desc:`The prompt-processing attention over the selected cells. Head dim 256, 12 query heads per KV head, 128 threads
+  in four warps: scores are produced per cell (8 lanes each), P·V per dimension (64 lanes each, exactly one int8 scale
+  group). Cells are processed in chunks of 32; the query row stride is <code>HD + 8 = 264</code> halves so the fragment
+  loads do not all hit the same shared-memory bank. It reads the int8 cache directly — dequantization is folded into
+  the dot product, so the 4× compression costs no extra pass over memory.`,
+  flow:['in: selected cell list + int8 K/V blocks + their fp16 scales',
+        'load a 32-cell chunk of K, compute scores by cell (8 lanes per cell)',
+        'softmax over the chunk, carried into the running sum',
+        'P·V per output dimension (64 lanes = one int8 scale group)',
+        'out: 24 heads × 256 floats, FP32'],
+  kv:[['file','qsa_prompt_attn.cu'],['geometry','HD 256 · G 12 · 128 threads (4 warps)'],
+      ['chunking','CH = 32 cells per chunk'],['stride','QS = HD + 8 = 264 halves (bank-conflict-free)'],
+      ['formats','int8 KV (Q8) with fp16 scales; Q4 variant shares the code'],
+      ['why','the full 262,144-cell row is never materialized']],
+  links:[['← top-k select','the cell list is its input'],
+         ['← int8 KV','resident cells or streamed cells, same kernel'],
+         ['→ attention output','feeds attn_output (6144→2560) × gate'],
+         ['↔ decode kernel','same math for 1–6 tokens at decode time']]}},
+
+// ---------------- column 4 ----------------
+
+// ---------------- column 4 ----------------
+{lane:3,n:'5',t:'Router top-10',c:'#f97316',sub:'router_top10.cu',d:{
+  owner:'src/kernels/cuda/router_top10.cu + native_router.cu (the BF16 GEMV that produces the logits)',
+  desc:`Per token: a BF16 GEMV produces 512 logits, a softmax runs over <b>all</b> of them (not over the selected
+  subset), then a stable descending sort takes the top ten and renormalizes — ties break by ascending index, exactly as
+  the transcribed llama-graph semantics. Two kernels split the job: the GEMV and the select. On the token path the
+  choice stays on the device: the captured graph reads the expert ids it just produced, which is what the log line
+  “5261 resident experts, decided on the device” reports.`,
+  flow:['hidden (2560) → BF16 GEMV against ffn_gate_inp (512 rows) → 512 logits',
+        'softmax over all 512',
+        'stable argsort descending → top 10 ids, ascending index on ties',
+        'renormalize the 10 weights to sum 1',
+        'out: (expert id, weight) × 10, consumed on the device by the graph'],
+  kv:[['files','router_top10.cu (select) + native_router.cu (GEMV)'],
+      ['experts','512 per layer, top 10 active'],
+      ['semantics','softmax over all · stable top-k · renormalize'],
+      ['device-side','the graph hit path keeps the choice on the GPU'],
+      ['parity','router_top10_parity + route_window_parity']],
+  links:[['← MoE block','its router weights (5 MiB F32)'],
+         ['→ expert GEMM','the ids and weights'],
+         ['↔ memory tiers','ids decide cache / PCIe / CPU'],
+         ['← CUDA graphs','device-side decision avoids a host round trip']]}},
+{lane:3,n:'6',t:'AVX2 / AVX-512 CPU',c:'#22c55e',sub:'20 .cpp · 23 workers',d:{
+  owner:'src/kernels/cpu: expert.cpp, iq_avx2.cpp, iq_avx512.cpp, kq_avx1/2.cpp, pool.cpp (+ affinity per OS)',
+  desc:`The other half of the expert tier. When the router picks an expert that is not in the GPU cache, the CPU pool
+  can compute it <b>in place</b>, from the page-locked RAM copy, while the GPU works on the cached ones. The kernels
+  are AVX2 and AVX-512 versions of the expert dot products and of the i-quant/k-quant formats; the runtime picks the
+  widest ISA the CPU has. On the reference PC that is AVX2 — the log says so at start-up.`,
+  flow:['router miss (expert not in the VRAM cache)',
+        'the blob is already in pinned RAM (19,315 experts)',
+        'a pool task pins the blob, runs the AVX2/AVX-512 dot, writes the result',
+        'the host thread drains results and hands them to the layer context',
+        'PCIe copies the same blob instead when pcie_frac says the copy is cheaper'],
+  kv:[['files','20 .cpp: expert.cpp, iq_avx2/iq_avx512, kq_avx1/kq_avx2, pool + affinity'],
+      ['workers','23 pool workers + the host thread (log: logical CPUs listed)'],
+      ['ISA','AVX2 on this CPU (log: "no AVX-512"); AVX-512 path when present'],
+      ['i-quants','ggml’s kernels for the i-quant rows, plus the transcribed native ones'],
+      ['measured','RAM tier built in 30 s; 1,207,973 CPU blobs in one request (log)']],
+  links:[['← memory tiers','pinned RAM is the input'],
+         ['→ layer context','result rejoins the MoE weighted sum'],
+         ['↔ PCIe','the alternative branch for the same miss (55% copied)'],
+         ['↔ GPU kernels','same arithmetic tested against the same oracle']]}},
+{lane:3,n:'6',t:'Grouped expert GEMM',c:'#f59e0b',sub:'s2_expert_grouped.cu',d:{
+  owner:'src/kernels/cuda/s2_expert_grouped.cu (arithmetic shared with src/kernels/cpu/expert.cpp)',
+  desc:`The GPU side of the expert tier: one warp computes one output row, and the arithmetic is the same as the CPU
+  kernel over the same bytes — <code>sum (c−1)·d_w·x̂·d_x</code>, both sums int8 × int8, so both are
+  <code>__dp4a</code> (four multiply-accumulates per instruction, exact in integer). No dequantization happens inside
+  the loop: the weight scale is fp16 per 64 elements, the activation scale fp16 per 32, so the float work is one
+  multiply-add per 32-element chunk. Because the integer sums are exact, GPU and CPU results agree bit for bit on the
+  same input.`,
+  flow:['in: expert blob (int8 blocks) + Q8_1 activations + scales',
+        'one warp per output row: dot products as __dp4a chains',
+        'per-chunk float rescale: d_w · d_x per 32-element group',
+        'out: 640-wide gate/up (SwiGLU) then 2560-wide down rows'],
+  kv:[['file','s2_expert_grouped.cu — "R4’s grouped GPU expert"'],
+      ['mapping','one warp per output row'],
+      ['math','int8 × int8 via __dp4a; exact integer sums'],
+      ['scales','fp16 per 64 weights, fp16 per 32 activations'],
+      ['equivalence','same arithmetic as cpu/expert.cpp → GPU and CPU agree'],
+      ['parity','s2_expert_grouped_parity']],
+  links:[['← router','which experts and how many rows'],
+         ['← memory tiers','blob resident in VRAM or just copied over PCIe'],
+         ['→ MoE reduce','the 10 expert outputs'],
+         ['↔ CPU experts','identical arithmetic, different ISA']]}},
+{lane:3,n:'7',t:'MoE weighted reduce',c:'#fbbf24',sub:'native_moe.cu',d:{
+  owner:'src/kernels/cuda/native_moe.cu — arithmetic from ggml moe-weighted-reduction.cu (3cf03257, MIT)',
+  desc:`Combines the routed experts: for each token, the ten outputs are scaled by their router probabilities and summed,
+  then the always-on shared expert is added. The reduction is the pinned ggml <code>moe-weighted-reduction</code>
+  arithmetic, so the combine order matches llama.cpp’s; the shared expert is computed on the engine’s own
+  <code>shared_expert.cu</code> path and travels with the same tokens.`,
+  flow:['in: up to 10 expert outputs (640 … 2560 rows each) + router weights',
+        'scale each contribution by its weight, accumulate in order',
+        'add the shared expert’s output (always computed)',
+        'out: one 2560-wide delta for the token'],
+  kv:[['file','native_moe.cu'],['source','ggml moe-weighted-reduction.cu at 3cf03257'],
+      ['inputs','10 routed experts + 1 shared expert'],['order','pinned to the ggml reduction'],
+      ['parity','native_expert_parity / native_multi_parity / shared_expert_parity']],
+  links:[['← grouped expert GEMM','the per-expert outputs'],
+         ['← CPU pool','computed experts join here'],
+         ['→ gated residual','the delta enters the HC write'],
+         ['↔ sampler','weights come from the router, not renormalized here']]}},
+
+// ---------------- column 5 ----------------
+
+// ---------------- column 5 ----------------
+{lane:4,n:'8',t:'Sampler / argmax',c:'#ec4899',sub:'sampler.cu · 248,320',d:{
+  owner:'src/kernels/cuda/sampler.cu (+ sampler_parity, decode_cluster_parity)',
+  desc:`Turns the output head\u2019s 248,320 logits into one token per row. Greedy is one block per token, or on sm_90+ a
+  <b>cluster of 8 CTAs</b> that share the row through distributed shared memory: one load in flight per thread becomes
+  four, and the eight partial argmaxes meet in CTA 0 \u2014 the kernel\u2019s own bench note puts it at 6 \u00b5s against 40 \u00b5s
+  for the one-block version. The sampled chain applies top-k, top-p and min-p with the repetition penalties in
+  llama.cpp\u2019s order, and the answer is bit-identical to the one-block kernel (lowest index wins ties, NaN never wins).`,
+  flow:['in: logits row (248,320 floats) for every token of the window',
+        'penalties applied when requested (repeat / frequency / presence)',
+        'greedy: argmax; sampled: top-k 20 \u2192 top-p 0.95 \u2192 min-p \u2192 draw',
+        'cluster path: 8 CTAs merge partial results in CTA 0 (lowest index on ties)',
+        'out: one token id per row + a status word'],
+  kv:[['file','sampler.cu'],['vocabulary','248,320 logits per token'],
+      ['cluster','8 CTAs \u00d7 1,024 threads, sm_90+'],['measured','6 \u00b5s vs 40 \u00b5s (cluster vs one-block, comment in sampler.cu)'],
+      ['defaults','top_k 20 \u00b7 top_p 0.95 \u00b7 temp 1.0'],['MTP','drafts stop at p < 0.5']],
+  links:[['\u2190 output head','248,320 logits per token'],
+         ['\u2192 streams & events','the id starts the MTP draft chain'],
+         ['\u2194 CUDA graphs','runs inside the captured window'],
+         ['\u2194 inline PTX','%cluster_ctarank for the clustered argmax']]}},
+{lane:4,t:'CUDA graphs',c:'#8b5cf6',sub:'per window size 1–6',d:{
+  owner:'src/core/graph.cpp + include/strata/core/graph.hpp (owns a cudaGraphExec_t and an event)',
+  desc:`A verify window runs the same hundreds of kernels in the same order for a given number of tokens, so the engine
+  records the sequence once per window size and replays it. Capture is thread-local
+  (<code>cudaStreamBeginCapture</code>), node count is read back (<code>cudaGraphGetNodes</code>), the graph is
+  instantiated once, and each later window is one <code>cudaGraphLaunch</code>. The log confirms capture for the
+  1- to 6-token windows. The token path additionally chooses experts inside the graph — the device, not the host,
+  resolves the 5,261 resident experts.`,
+  flow:['first window of size n → cudaStreamBeginCapture(thread-local)',
+        'the ordinary kernels are enqueued as usual and become graph nodes',
+        'capture ends → cudaGraphGetNodes counts them → cudaGraphInstantiate',
+        'later windows → cudaGraphLaunch(exec, stream) — one launch for the step',
+        'device-side expert choice keeps the graph’s branches on the GPU'],
+  kv:[['file','src/core/graph.cpp (lines ~49–78: capture, instantiate, launch)'],
+      ['windows','sizes 1–6, captured at start (log)'],
+      ['ownership','graph.hpp: move-only exec + event'],
+      ['why','per-kernel launch overhead disappears from a 48-layer window'],
+      ['device-side','"token graph hit path: 5261 resident experts, decided on the device"']],
+  links:[['← launch column','the entry point for every decode step'],
+         ['→ PDL edges','applied to the captured kernel→kernel dependencies'],
+         ['↔ MTP','drafts arrive on a priority stream, verify runs in its graph'],
+         ['↔ native_mmvq','exact-mode flags must be set before capture']]}},
+{lane:4,t:'PDL edges',c:'#7c3aed',sub:'kernel→kernel edges',d:{
+  owner:'src/core/verify.cpp (the edge rewrite) + include/strata/kernels/pdl.hpp',
+  desc:`Programmatic dependent launch lets a kernel begin its prologue while its predecessor is still draining, instead
+  of waiting for the whole grid. The engine rewrites graph dependencies between kernel nodes into programmatic edges
+  (CUDA ≥ 12.3 allows them only kernel→kernel), behind <code>STRATA_DF_PDL=1</code>. It counts and reports what it
+  changed, refusing edges that would be unsound, and <code>pdl_parity</code> verifies that the overlapped execution
+  produces identical results.`,
+  flow:['the window graph is captured as usual',
+        'for each dependency, check both ends are kernel nodes',
+        'rewrite the edge to cudaGraphDependencyTypeProgrammatic',
+        'launch: the successor’s prologue overlaps the predecessor’s epilogue',
+        'log prints edges, programmatic edges, and any rejected kernel-to-kernel case'],
+  kv:[['file','src/core/verify.cpp:1689+ (CUDART_VERSION >= 12030)'],
+      ['guard','opt-in STRATA_DF_PDL=1 · sm_90+'],
+      ['rule','only kernel→kernel edges get programmatic semantics'],
+      ['reporting','"%zu edges, %zu programmatic (PDL), %zu of them not kernel to kernel"'],
+      ['validation','pdl_parity']],
+  links:[['← CUDA graphs','it edits the captured graph’s dependencies'],
+         ['↔ verify window','the quantizations and dense work overlap the previous kernel'],
+         ['↔ parity','bit-identical results required before the overlap is allowed']]}},
+{lane:4,t:'Streams & events',c:'#a855f7',sub:'main · MTP priority',d:{
+  owner:'src/core/session.cpp, src/core/mtp.cpp, src/core/graph.cpp',
+  desc:`Work is enqueued on explicit streams. The draft layer runs on its own stream at the highest priority the device
+  offers (<code>cudaStreamCreateWithPriority</code>, <code>STRATA_MTP_PRIORITY</code>; HIP uses the default) so the
+  drafts start as soon as the token is sampled and can overlap the verify stream. Events delimit capture and
+  synchronize the streams; each graph object owns the event that marks its window.`,
+  flow:['token sampled → the token id is published to the MTP stream',
+        'MTP drafts ≤ 4 tokens on the priority stream',
+        'verify window runs in its captured graph on the main stream',
+        'events order the hand-off; the accepted prefix extends the context',
+        'next token: repeat with the accepted draft count'],
+  kv:[['files','session.cpp (streams) · mtp.cpp (priority) · graph.cpp (events)'],
+      ['priority','cudaStreamCreateWithPriority(…, prio_hi); HIP default'],
+      ['env','STRATA_MTP_PRIORITY'],
+      ['events','one per graph object, used to order capture/replay'],
+      ['measured','MTP drafts p ≥ 0.5 · 81–85% accepted in the reference run']],
+  links:[['← sampler','the token that starts a draft chain'],
+         ['→ verify window','drafts are verified in one graph'],
+         ['↔ MTP layer','835 MiB draft layer + its own experts'],
+         ['↔ CUDA graphs','each window size has a graph that is replayed']]}},
+{lane:4,t:'Not in this stack',c:'#7f1d1d',sub:'no Triton · no FlashInfer',d:{
+  owner:'a deliberate boundary: the engine is one compiled C++/CUDA binary, the server is the only Python',
+  desc:`<b>Triton</b> is not used: there is no Python kernel and no runtime compiler in the engine — a search of
+  <code>src/</code> and <code>include/</code> finds no reference, and every kernel is compiled by nvcc/hipcc at build
+  time (which is also what makes graph capture and the parity tests possible). <b>FlashInfer</b> is not used either:
+  attention is <code>native_flash_attn.cu</code> plus the QSA kernels. <b>PyTorch</b> and <b>vLLM / SGLang</b> are not
+  dependencies; the queue is a FIFO in <code>serve/server.py</code>. The reason is the target: one consumer GPU with
+  system RAM, NVIDIA or AMD from the same sources, no Python runtime under the sampler.`,
+  flow:['a request never enters a Python kernel path',
+        'every op is a compiled launch or part of a captured graph',
+        'attention: native_flash_attn + QSA, not FlashInfer',
+        'quantized mat-vec: native_mmvq, not a Triton kernel',
+        'scheduling: FIFO in the server, not vLLM’s paged attention scheduler'],
+  kv:[['Triton','not used — no Python kernels, no JIT; 0 references in src/ or include/'],
+      ['FlashInfer','not used — 0 references'],
+      ['PyTorch','not in the engine (only the Python server exists, and it does no tensor math)'],
+      ['vLLM / SGLang','not dependencies; the reference run’s log names appear only as API-compatible wording'],
+      ['in exchange','no dynamic batching server, no paged-attention VM — one resident sequence (FIFO)']],
+  links:[['↔ Languages','the alternative would be a Python/Triton stack; this is C++'],
+         ['↔ llama.cpp shared','llama.cpp kernels are transcribed, not linked as a second runtime'],
+         ['↔ CUDA graphs','compiled kernels are a precondition for capture'],
+         ['↔ parity tests','each native kernel is provable against a scalar reference']]}}
+
+];
+const KSEQ=[
+ {t:['Gated residual (HC)'],label:'1 · HC read',text:'the block starts from 4 residual streams; gr_read collapses them to one 2560 vector through a rank-320 mix, with cp.async staging the activations.'},
+ {t:['MMVQ mat-vec','RoPE / M-RoPE','cuBLAS / hipBLASLt'],label:'2 · project & rotate',text:'MMVQ runs the projections over GGUF weights for 1–8 token columns, then RoPE rotates 64 of 256 dims. Over a prompt chunk the same projections are one cuBLAS GEMM.'},
+ {t:['Fused GDN'],label:'3a · mixer — GDN blocks',text:'36 of 48 blocks take branch 3a: native_gdn_preprocess.cu applies the k=4 causal conv, fused_gdn.cu does the delta-rule state update (state 16×128, 512 threads).'},
+ {t:['QSA indexer'],label:'3b.1 · indexer — attention blocks',text:'the other 12 blocks take branch 3b: the BF16 4×128 indexer scores every past position — the one O(context) kernel, kept deliberately tiny.'},
+ {t:['Top-k select'],label:'3b.2 · top-2048',text:'scores map to order-preserving uint32; a TF32 mma produces them and a block top-k over 256-entry tiles keeps 2,048 cells per query.'},
+ {t:['int8 KV + stream'],label:'3b.3 · KV fetch',text:'only the selected cells are read, as int8 blocks; 98.9–99.6% are already in VRAM, the rest stream from 3.09 GiB of pinned RAM.'},
+ {t:['Flash attention (decode)','QSA prompt attention'],label:'3b.4 · attention',text:'Q·K → online softmax → P·V over the selection: native_flash_attn.cu for 1–6 decoded tokens, qsa_prompt_attn.cu for a prompt chunk. Same step, two shapes.'},
+ {t:['Gated residual (HC)'],label:'4 · HC write',text:'the same gated-residual kernel, write direction: the mixer output is folded back into all four streams, weighted per stream.'},
+ {t:['Router top-10'],label:'5 · router',text:'512 logits from the BF16 GEMV, softmax over all of them, stable top-10 with renormalized weights — decided on the device.'},
+ {t:['Grouped expert GEMM','AVX2 / AVX-512 CPU'],label:'6 · the 10 experts',text:'each expert runs where its blob is: s2_expert_grouped.cu (int8 __dp4a) on the GPU for cached or copied blobs, the AVX2 pool in place on pinned RAM for the rest.'},
+ {t:['MoE weighted reduce'],label:'7 · combine',text:'the ten outputs are scaled by their weights and summed, then the always-on shared expert is added — the pinned ggml reduction order.'},
+ {t:['Sampler / argmax'],label:'8 · sample',text:'248,320 logits → one token: clustered argmax (8 CTAs) for greedy, or the top-k / top-p / min-p chain.'},
+ {t:['CUDA graphs','Streams & events','PDL edges'],label:'↻ replay',text:'the accepted token goes to the MTP priority stream for drafts; the next verify window replays its captured graph — phases 1–8 again, without host launches. These blocks are how the phases are launched, not a phase.'}
+];
+let kIdx=-1;
+function showK(i){
+  kIdx=i; const s=KSEQ[i];
+  document.querySelectorAll('#world .blk').forEach(b=>b.classList.toggle('flow',(s.t||[]).includes(b.dataset.k)));
+  $('#fstep').textContent=`step ${i+1} / ${KSEQ.length}`;
+  $('#ftext').innerHTML=`<b>${s.label}</b> — ${s.text}`;
+}
+function kPlay(){
+  if(fTimer){clearInterval(fTimer);fTimer=null;$('#fbtn').textContent='▶ Play flow';return;}
+  $('#fbtn').textContent='⏸ Pause';
+  let i=(kIdx+1)%KSEQ.length; showK(i);
+  fTimer=setInterval(()=>{i=(i+1)%KSEQ.length;showK(i);},2600);
+}
+function ochip(x,y,text){
+  const d=document.createElement('div'); d.className='ochip';
+  d.style.transform=`translate3d(${x}px,${y}px,10px)`; d.textContent=text;
+  world.appendChild(d); return d;
+}
+function buildKernels(){
+  const W=200,H=50,D=76,colX=[-480,-240,0,240,480],yH=-300,step=84;
+  const lanes=KLANES.filter(x=>x.h), groups=lanes.map(()=>[]);
+  KLANES.filter(x=>!x.h).forEach(x=>groups[x.lane].push(x));
+  kIdx=-1;
+  const y0s=groups.map(()=>-190);
+  lanes.forEach((L,li)=>{
+    const x=colX[li], y0=y0s[li];
+    const hb=block({w:W,h:H+8,d:D+8,x,y:yH,z:0,c:L.c,label:L.t,sub:L.sub,
+      open:()=>openPanel({tag:'column',c:L.c,title:L.t,sub:L.sub,...L.d})});
+    hb.dataset.k=L.t; hb.classList.add('hdr');
+    const top=yH+(H+8)/2;
+    groups[li].forEach((it,i)=>{
+      const y=y0+i*step;
+      const el=block({w:W,h:H,d:D,x,y,z:0,c:it.c,label:it.t,sub:it.sub,
+        open:()=>openPanel({tag:'kernel',c:it.c,title:it.t,sub:it.sub,...it.d})});
+      el.dataset.k=it.t;
+      if(it.n!=null){
+        const f=el.querySelector('.face'), b=document.createElement('span');
+        b.className='kbd'; b.textContent=it.n; f.appendChild(b);
+      }
+      const orEdge=(li===2&&i===1);
+      if(i===0)conn(x,top+6,x,y-H/2-6,0,'#ffffff33');
+      else conn(x,y-step+H/2+5,x,y-H/2-5,0,orEdge?'#f472b6aa':'#ffffff33');
+    });
+    if(li>0)conn(colX[li-1]+W/2+8,yH-6,x-W/2-8,yH-6,0,'#ffffff1f');
+  });
+  ochip(colX[2],y0s[2]+step/2,'or');
+  legend([['#3b82f6','CUDA / toolchain'],['#14b8a6','attention + KV'],['#c084fc','top-k'],['#eab308','GDN'],
+          ['#f59e0b','experts'],['#ec4899','sampler'],['#8b5cf6','launch'],['#7f1d1d','not used']]);
+  document.querySelectorAll('#anatbar .abtn').forEach(b=>b.classList.remove('on'));
+  $('#fbtn').textContent='▶ Play flow';
+  $('#fstep').textContent='kernel flow';
+  $('#ftext').innerHTML='<b>One token through the kernels</b> — badge = phase (1 → 8). 3a and 3b are the two mixer branches; a shared badge is one phase done two ways.';
+}
+// ================= SHELL =================
+function legend(items){
+  $('#legend').innerHTML=items.map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('');
+}
+const BUILD={model:buildModel,anatomy:buildAnatomy,kernels:buildKernels,stack:buildStack,flow:buildFlow};
+VIEWS.kernels={rx:-6,ry:-12,z:-90,oy:0};
+function setView(v){
+  cur=v;
+  world.classList.add('anim'); world.innerHTML=''; fDot=null;
+  if(fTimer){clearInterval(fTimer);fTimer=null;$('#fbtn').textContent='▶ Play flow';}
+  blkIdx=0; BUILD[v]();
+  Object.assign(cam,JSON.parse(JSON.stringify(VIEWS[v]))); applyCam();
+  setTimeout(()=>world.classList.remove('anim'),750);
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.v===v));
+  $('#flowbar').classList.toggle('open',v==='flow'||v==='kernels'||v==='model');
+  $('#anatbar').classList.toggle('open',v==='anatomy');
+  cam.ox=0; panel.classList.remove('open');
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>setView(t.dataset.v)));
+document.querySelectorAll('#anatbar .abtn').forEach(b=>b.addEventListener('click',()=>{
+  anatUnit=b.dataset.u;
+  world.classList.add('anim'); world.innerHTML=''; buildAnatomy();
+  Object.assign(cam,JSON.parse(JSON.stringify(VIEWS.anatomy))); applyCam();
+  setTimeout(()=>world.classList.remove('anim'),750);
+  panel.classList.remove('open'); cam.ox=0;
+}));
+$('#fbtn').addEventListener('click',()=>{ if(cur==='kernels') kPlay(); else if(cur==='model') tPlay(); else flowPlay(); });
+setView('model');
+</script>
+</body>
+</html>
